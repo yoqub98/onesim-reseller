@@ -1,24 +1,27 @@
-import logo from './logo.svg';
-import './App.css';
+import { Navigate, Route, Routes } from "react-router-dom";
+import AppShell from "./components/layout/AppShell";
+import CatalogPage from "./pages/CatalogPage";
+import DashboardPage from "./pages/DashboardPage";
+import EarningsPage from "./pages/EarningsPage";
+import GroupsPage from "./pages/GroupsPage";
+import NewOrderPage from "./pages/NewOrderPage";
+import OrdersPage from "./pages/OrdersPage";
+import SettingsPage from "./pages/SettingsPage";
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <AppShell>
+      <Routes>
+        <Route path="/" element={<DashboardPage />} />
+        <Route path="/catalog" element={<CatalogPage />} />
+        <Route path="/new-order" element={<NewOrderPage />} />
+        <Route path="/groups" element={<GroupsPage />} />
+        <Route path="/orders" element={<OrdersPage />} />
+        <Route path="/earnings" element={<EarningsPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </AppShell>
   );
 }
 
