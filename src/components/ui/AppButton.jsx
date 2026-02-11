@@ -1,4 +1,4 @@
-import { Button, IconButton } from "@chakra-ui/react";
+import { Box, Button, HStack, IconButton } from "@chakra-ui/react";
 import { uiColors, uiRadii, uiShadows } from "../../design-system/tokens";
 
 const baseButtonStyles = {
@@ -43,7 +43,19 @@ const buttonVariants = {
   }
 };
 
-export function AppButton({ variant = "soft", ...props }) {
+export function AppButton({
+  variant = "soft",
+  children,
+  leftIcon,
+  rightIcon,
+  startElement,
+  endElement,
+  ...props
+}) {
+  const resolvedStartElement = startElement ?? leftIcon;
+  const resolvedEndElement = endElement ?? rightIcon;
+  const hasIcon = Boolean(resolvedStartElement || resolvedEndElement);
+
   return (
     <Button
       size="sm"
@@ -52,7 +64,25 @@ export function AppButton({ variant = "soft", ...props }) {
       {...baseButtonStyles}
       {...buttonVariants[variant]}
       {...props}
-    />
+    >
+      {hasIcon ? (
+        <HStack as="span" spacing={2}>
+          {resolvedStartElement ? (
+            <Box as="span" display="inline-flex" alignItems="center">
+              {resolvedStartElement}
+            </Box>
+          ) : null}
+          <Box as="span">{children}</Box>
+          {resolvedEndElement ? (
+            <Box as="span" display="inline-flex" alignItems="center">
+              {resolvedEndElement}
+            </Box>
+          ) : null}
+        </HStack>
+      ) : (
+        children
+      )}
+    </Button>
   );
 }
 

@@ -637,8 +637,8 @@ function CatalogPage() {
               </Box>
             </Grid>
 
-            <Box bg="rgba(248,250,252,0.6)" px={4} py={4} maxH={{ base: "54vh", md: "500px" }} overflowY="auto">
-              <SurfaceCard p={3} boxShadow={uiShadows.soft} mb={3}>
+            <Box bg="rgba(248,250,252,0.6)" px={4} py={6} maxH={{ base: "54vh", md: "500px" }} overflowY="auto">
+              <SurfaceCard p={3} boxShadow={uiShadows.soft} mb={6}>
                 <Flex justify="space-between" align="center">
                   <HStack spacing={3}>
                     <CountryFlag code={buyPlan.countryCode} size={32} />
@@ -655,7 +655,7 @@ function CatalogPage() {
 
               {activeOrderTab === "group" ? (
                 <>
-                  <Flex justify="space-between" align="center" mb={2}>
+                  <Flex justify="space-between" align="center" mb={4}>
                     <Text fontWeight="700" fontSize={{ base: "16px", md: "18px" }} color="#0a0a0a">
                       {t.modal.groups} ({selectedGroups.length})
                     </Text>
@@ -673,7 +673,7 @@ function CatalogPage() {
                   </Flex>
 
                   {isGroupPickerOpen ? (
-                    <SurfaceCard p={3} mb={3} boxShadow={uiShadows.soft}>
+                    <SurfaceCard p={3} mb={5} boxShadow={uiShadows.soft}>
                       <Text fontSize="sm" color={uiColors.textPrimary} mb={2} fontWeight="600">
                         {t.modal.selectGroup}
                       </Text>
@@ -690,32 +690,38 @@ function CatalogPage() {
                             </option>
                           ))}
                         </AppSelect>
-                        <AppButton variant="primary" onClick={addGroupToOrder}>{t.modal.add}</AppButton>
+                        <AppButton variant="primary" leftIcon={<PlusIcon width={14} />} onClick={addGroupToOrder}>{t.modal.add}</AppButton>
                       </HStack>
                     </SurfaceCard>
                   ) : null}
 
-                  <VStack align="stretch" spacing={3}>
+                  <VStack align="stretch" spacing={5}>
                     {selectedGroups.map((group) => (
-                      <SurfaceCard key={group.id} p={3} borderRadius="13px" boxShadow="0px 1px 16.8px rgba(0,0,0,0.17)">
+                      <SurfaceCard key={group.id} position="relative" p={3} borderRadius="13px" boxShadow="0px 1px 16.8px rgba(0,0,0,0.17)">
+                        <IconButton
+                          aria-label="Guruhni o'chirish"
+                          size="xs"
+                          variant="ghost"
+                          color="#b91c1c"
+                          bg="#fee2e2"
+                          borderWidth="1px"
+                          borderColor="#fecaca"
+                          _hover={{ bg: "#fecaca", color: "#991b1b" }}
+                          position="absolute"
+                          top={2.5}
+                          right={2.5}
+                          onClick={() => removeGroupFromOrder(group.id)}
+                        >
+                          <TrashIcon width={15} />
+                        </IconButton>
                         <HStack justify="space-between" mb={2}>
                           <HStack spacing={2}>
                             <UsersIcon width={14} color="#64748b" />
                             <Text fontWeight="700" fontSize="sm" color="#0a0e1a">{group.name}</Text>
                           </HStack>
-                          <HStack spacing={2}>
-                            <Text fontSize="sm" color={uiColors.accent} fontWeight="500">
-                              {t.modal.totalCustomers} : {group.members.length} {t.modal.customers.toLowerCase()}
-                            </Text>
-                            <IconButton
-                              aria-label="Guruhni o'chirish"
-                              icon={<TrashIcon width={15} />}
-                              size="xs"
-                              variant="ghost"
-                              color="red.500"
-                              onClick={() => removeGroupFromOrder(group.id)}
-                            />
-                          </HStack>
+                          <Text fontSize="sm" color={uiColors.accent} fontWeight="500" pr={8}>
+                            {t.modal.totalCustomers} : {group.members.length} {t.modal.customers.toLowerCase()}
+                          </Text>
                         </HStack>
                         <VStack align="stretch" spacing={2}>
                           {group.members.map((member) => (
@@ -739,7 +745,7 @@ function CatalogPage() {
                   </VStack>
 
                   {selectedGroups.length > 0 ? (
-                    <Grid templateColumns={{ base: "1fr", sm: "1fr 1fr" }} gap={3} pt={3} mt={3} borderTopWidth="1px" borderColor="#f1f5f9">
+                    <Grid templateColumns={{ base: "1fr", sm: "1fr 1fr" }} gap={3} pt={5} mt={5} borderTopWidth="1px" borderColor="#f1f5f9">
                       <Box>
                         <Text fontSize="14px" fontWeight="700" color="#12161b" mb={1.5}>{t.modal.deliveryMethod}</Text>
                         <AppSelect
@@ -789,16 +795,35 @@ function CatalogPage() {
                 </>
               ) : (
                 <>
-                  <Flex justify="space-between" align="center" mb={2}>
+                  <Flex justify="space-between" align="center" mb={4}>
                     <Text fontWeight="700" fontSize={{ base: "16px", md: "18px" }} color="#0a0a0a">{t.modal.customers} ({customers.length})</Text>
                     <AppButton variant="ghost" h="32px" borderRadius="26px" borderColor="#8294ac" borderWidth="1px" leftIcon={<PlusIcon width={14} />} onClick={addCustomer}>
                       {t.modal.addCustomer}
                     </AppButton>
                   </Flex>
 
-                  <VStack align="stretch" spacing={3}>
+                  <VStack align="stretch" spacing={5}>
                     {customers.map((customer, index) => (
-                      <SurfaceCard key={customer.id} p={6} borderRadius="13px" boxShadow="0px 1px 16.8px rgba(0,0,0,0.17)">
+                      <SurfaceCard key={customer.id} position="relative" p={6} borderRadius="13px" boxShadow="0px 1px 16.8px rgba(0,0,0,0.17)">
+                        <IconButton
+                          aria-label="Mijozni o'chirish"
+                          size="sm"
+                          variant="ghost"
+                          color="#b91c1c"
+                          bg="#fee2e2"
+                          borderWidth="1px"
+                          borderColor="#fecaca"
+                          _hover={{ bg: "#fecaca", color: "#991b1b" }}
+                          position="absolute"
+                          top={3}
+                          right={3}
+                          isDisabled={customers.length <= 1}
+                          opacity={customers.length <= 1 ? 0.45 : 1}
+                          cursor={customers.length <= 1 ? "not-allowed" : "pointer"}
+                          onClick={() => removeCustomer(customer.id)}
+                        >
+                          <TrashIcon width={16} />
+                        </IconButton>
                         <Flex justify="space-between" align="center" mb={3}>
                           <HStack spacing={2}>
                             <Box w="24px" h="24px" borderRadius="full" bg="#ffeee8" display="grid" placeItems="center">
@@ -806,16 +831,6 @@ function CatalogPage() {
                             </Box>
                             <Text color="#314158" fontWeight="500" fontSize="sm">{t.modal.customerInfo}</Text>
                           </HStack>
-                          {customers.length > 1 ? (
-                            <IconButton
-                              aria-label="Mijozni o'chirish"
-                              icon={<TrashIcon width={16} />}
-                              size="sm"
-                              variant="ghost"
-                              color="red.500"
-                              onClick={() => removeCustomer(customer.id)}
-                            />
-                          ) : null}
                         </Flex>
 
                         <HStack borderWidth="1px" borderColor="#d1d9e4" borderRadius="10px" bg="#f8fafc" px={3} h="46px" spacing={2}>
@@ -833,7 +848,7 @@ function CatalogPage() {
                         </HStack>
                         {customer.errors.fullName ? <Text mt={1} fontSize="xs" color="red.500">{customer.errors.fullName}</Text> : null}
 
-                        <Grid templateColumns={{ base: "1fr", sm: "1fr 1fr" }} gap={3} pt={3} mt={3} borderTopWidth="1px" borderColor="#f1f5f9">
+                        <Grid templateColumns={{ base: "1fr", sm: "1fr 1fr" }} gap={3} pt={4} mt={4} borderTopWidth="1px" borderColor="#f1f5f9">
                           <Box>
                             <Text fontSize="14px" fontWeight="700" color="#12161b" mb={1.5}>{t.modal.deliveryMethod}</Text>
                             <AppSelect
@@ -946,8 +961,8 @@ function CatalogPage() {
                 </>
               )}
 
-              <Text mt={4} mb={2} fontWeight="700" fontSize="sm" color="#0a0a0a">{t.modal.paymentMethod}</Text>
-              <Box bg="rgba(254,79,24,0.05)" borderWidth="1px" borderColor="rgba(254,79,24,0.2)" borderRadius="10px" px={3} py={2}>
+              <Text mt={8} mb={4} fontWeight="700" fontSize="sm" color="#0a0a0a">{t.modal.paymentMethod}</Text>
+              <Box bg="rgba(254,79,24,0.05)" borderWidth="1px" borderColor="rgba(254,79,24,0.2)" borderRadius="10px" px={3} py={4}>
                 <HStack spacing={3}>
                   <Box w="38px" h="38px" borderRadius="4px" bg="white" borderWidth="1px" borderColor={uiColors.border} display="grid" placeItems="center">
                     <CreditCardIcon width={16} color={uiColors.accent} />
