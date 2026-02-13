@@ -30,14 +30,17 @@ import {
   VStack
 } from "@chakra-ui/react";
 import { useEffect, useMemo, useState } from "react";
-import { CircleFlag } from "react-circle-flags";
 import { useNavigate } from "react-router-dom";
 import CountryFlag from "../components/common/CountryFlag";
 import {
+  AppDataTable,
+  AppDataTableCell,
+  AppDataTableRow,
   AppButton,
   AppIconButton,
   AppSelect,
   FilterChips,
+  PackageDisplay,
   SegmentedControl,
   SurfaceCard
 } from "../components/ui";
@@ -47,6 +50,7 @@ import { uiColors, uiRadii, uiShadows } from "../design-system/tokens";
 import { catalogService } from "../services/catalogService";
 import { groupsService } from "../services/groupsService";
 import { formatMoneyFromUzs, formatMoneyPartsFromUzs } from "../utils/currency";
+import { formatPackageDataLabel } from "../utils/package";
 
 const dataFilterValues = ["all", "5GB", "10GB", "20GB", "Cheksiz"];
 const dayFilterValues = ["all", "7", "15", "30", "90"];
@@ -69,22 +73,10 @@ function createCustomer() {
   };
 }
 
-function formatDataLabel(plan) {
-  if (plan.dataLabel) {
-    return plan.dataLabel;
-  }
-
-  if (!plan.dataGb || Number(plan.dataGb) === 0) {
-    return "Cheksiz";
-  }
-
-  return `${plan.dataGb}GB`;
-}
-
 function CatalogPage() {
   const navigate = useNavigate();
-  const { currency, setCurrency } = useCurrency();
-  const { locale, setLocale, dict } = useLocale();
+  const { currency } = useCurrency();
+  const { dict } = useLocale();
   const t = dict.catalog;
 
   const [plans, setPlans] = useState([]);
@@ -105,6 +97,7 @@ function CatalogPage() {
   const [isGroupPickerOpen, setIsGroupPickerOpen] = useState(false);
   const [groupCandidateId, setGroupCandidateId] = useState("");
   const operatorHelperText = t.modal.helperOperator;
+  const selfOrderHelperText = t.modal.helperSelf;
 
   useEffect(() => {
     const fetchPlans = async () => {
@@ -135,7 +128,7 @@ function CatalogPage() {
 
   const filteredPlans = useMemo(() => {
     return plans.filter((plan) => {
-      const dataLabel = formatDataLabel(plan);
+      const dataLabel = formatPackageDataLabel(plan, t.units.unlimited);
       const destinationMatch =
         filters.destination === "all" || plan.destination === filters.destination;
       const dataMatch = filters.data === "all" || dataLabel === filters.data;
@@ -143,7 +136,7 @@ function CatalogPage() {
 
       return destinationMatch && dataMatch && dayMatch;
     });
-  }, [filters, plans]);
+  }, [filters, plans, t.units.unlimited]);
 
   const dataFilterOptions = useMemo(() => {
     return dataFilterValues.map((value) => ({
@@ -300,7 +293,7 @@ function CatalogPage() {
     navigate("/new-order", {
       state: {
         preselectedPlanId: buyPlan.id,
-        orderMode: activeOrderTab === "group" ? "group" : "customer",
+        orderMode: activeOrderTab === "group" ? "group" : activeOrderTab === "self" ? "self" : "customer",
         customers,
         selectedGroups,
         deliveryMethod: activeOrderTab === "group" ? (selectedGroups[0]?.deliveryMethod || "sms") : undefined,
@@ -323,7 +316,8 @@ function CatalogPage() {
     (sum, group) => sum + (Array.isArray(group.members) ? group.members.length : 0),
     0
   );
-  const effectiveCustomerCount = activeOrderTab === "group" ? groupMemberCount : customers.length;
+  const effectiveCustomerCount =
+    activeOrderTab === "group" ? groupMemberCount : activeOrderTab === "self" ? 1 : customers.length;
   const customerCount = Math.max(effectiveCustomerCount, 1);
   const packageUnitPrice = buyPlan?.resellerPriceUzs || 0;
   const packageTotal = packageUnitPrice * customerCount;
@@ -345,44 +339,6 @@ function CatalogPage() {
         </Box>
 
         <HStack spacing={3} flexWrap="wrap">
-          <SegmentedControl
-            value={currency}
-            options={[
-              { value: "UZS", label: "UZS" },
-              { value: "USD", label: "USD" }
-            ]}
-            onChange={setCurrency}
-          />
-
-          <SegmentedControl
-            value={locale}
-            options={[
-              {
-                value: "uz",
-                label: (
-                  <HStack spacing={1.5}>
-                    <Box w="14px" h="14px" borderRadius="full" overflow="hidden" flexShrink={0}>
-                      <CircleFlag countryCode="uz" height={14} />
-                    </Box>
-                    <Text>UZ</Text>
-                  </HStack>
-                )
-              },
-              {
-                value: "ru",
-                label: (
-                  <HStack spacing={1.5}>
-                    <Box w="14px" h="14px" borderRadius="full" overflow="hidden" flexShrink={0}>
-                      <CircleFlag countryCode="ru" height={14} />
-                    </Box>
-                    <Text>RU</Text>
-                  </HStack>
-                )
-              }
-            ]}
-            onChange={setLocale}
-          />
-
           <SegmentedControl
             value={view}
             options={[
@@ -468,69 +424,53 @@ function CatalogPage() {
       {!isLoading && filteredPlans.length > 0 ? (
         <SurfaceCard overflow="hidden">
           {view === "table" ? (
-            <Box overflowX="auto">
-              <Box minW="920px">
-                <Grid
-                  templateColumns="2.2fr 1.4fr 1fr 1fr 1.6fr"
-                  bg={uiColors.surfaceSoft}
-                  borderBottomWidth="1px"
-                  borderColor={uiColors.border}
-                >
-                  {[t.table.package, t.table.price, t.table.validity, t.table.speed, t.table.actions].map((header) => (
-                    <Text key={header} px={6} py={4} fontSize="xs" fontWeight="700" color="#5f718b">
-                      {header}
+            <AppDataTable
+              minWidth="920px"
+              columns="2.2fr 1.4fr 1fr 1fr 1.6fr"
+              headers={[t.table.package, t.table.price, t.table.validity, t.table.speed, t.table.actions]}
+            >
+              {filteredPlans.map((plan) => (
+                <AppDataTableRow key={plan.id} columns="2.2fr 1.4fr 1fr 1fr 1.6fr">
+                  <AppDataTableCell>
+                    <PackageDisplay
+                      countryCode={plan.countryCode}
+                      destination={plan.destination}
+                      dataLabel={formatPackageDataLabel(plan, t.units.unlimited)}
+                      flagSize={40}
+                    />
+                  </AppDataTableCell>
+
+                  <AppDataTableCell>
+                    <Text color={uiColors.textMuted} textDecor="line-through" fontSize="xs" fontWeight="500">
+                      {renderOriginalPrice(plan)}
                     </Text>
-                  ))}
-                </Grid>
+                    <Text color={uiColors.textPrimary} fontSize="md" fontWeight="700">
+                      {renderResellerPrice(plan)}
+                    </Text>
+                  </AppDataTableCell>
 
-                {filteredPlans.map((plan) => (
-                  <Grid
-                    key={plan.id}
-                    templateColumns="2.2fr 1.4fr 1fr 1fr 1.6fr"
-                    alignItems="center"
-                    borderBottomWidth="1px"
-                    borderColor={uiColors.border}
-                  >
-                    <HStack px={6} py={3.5} spacing={3}>
-                      <CountryFlag code={plan.countryCode} size={40} />
-                      <Box>
-                        <Text color={uiColors.textPrimary} fontSize="sm" fontWeight="700">
-                          {plan.destination}
-                        </Text>
-                        <Text color={uiColors.textSecondary} fontSize="xs">
-                          {formatDataLabel(plan)}
-                        </Text>
-                      </Box>
-                    </HStack>
-
-                    <Box px={6} py={3.5}>
-                      <Text color={uiColors.textMuted} textDecor="line-through" fontSize="xs" fontWeight="500">
-                        {renderOriginalPrice(plan)}
-                      </Text>
-                      <Text color={uiColors.textPrimary} fontSize="md" fontWeight="700">
-                        {renderResellerPrice(plan)}
-                      </Text>
-                    </Box>
-
-                    <Text px={6} py={3.5} color="#45556c" fontSize="sm">
+                  <AppDataTableCell>
+                    <Text color="#45556c" fontSize="sm">
                       {plan.validityDays} {t.units.day}
                     </Text>
+                  </AppDataTableCell>
 
-                    <Box px={6} py={3.5}>
-                      <Badge
-                        bg={uiColors.accentSoft}
-                        color={uiColors.accent}
-                        px={2.5}
-                        py={0.5}
-                        borderRadius="full"
-                        fontWeight="500"
-                        textTransform="none"
-                      >
-                        {plan.speed || plan.coverage}
-                      </Badge>
-                    </Box>
+                  <AppDataTableCell>
+                    <Badge
+                      bg={uiColors.accentSoft}
+                      color={uiColors.accent}
+                      px={2.5}
+                      py={0.5}
+                      borderRadius="full"
+                      fontWeight="500"
+                      textTransform="none"
+                    >
+                      {plan.speed || plan.coverage}
+                    </Badge>
+                  </AppDataTableCell>
 
-                    <HStack px={6} py={3.5} justify="end" spacing={2}>
+                  <AppDataTableCell align="right">
+                    <HStack justify="end" spacing={2}>
                       <AppIconButton
                         aria-label="Batafsil"
                         icon={<ShoppingBagIcon width={16} />}
@@ -542,10 +482,10 @@ function CatalogPage() {
                         {t.buy}
                       </AppButton>
                     </HStack>
-                  </Grid>
-                ))}
-              </Box>
-            </Box>
+                  </AppDataTableCell>
+                </AppDataTableRow>
+              ))}
+            </AppDataTable>
           ) : (
             <Grid p={4} gap={3} templateColumns={{ base: "1fr", sm: "repeat(2, 1fr)", xl: "repeat(3, 1fr)" }}>
               {filteredPlans.map((plan) => (
@@ -555,7 +495,7 @@ function CatalogPage() {
                       <CountryFlag code={plan.countryCode} size={32} />
                       <Box>
                         <Text fontWeight="700" color={uiColors.textPrimary}>{plan.destination}</Text>
-                        <Text fontSize="xs" color={uiColors.textSecondary}>{formatDataLabel(plan)}</Text>
+                        <Text fontSize="xs" color={uiColors.textSecondary}>{formatPackageDataLabel(plan, t.units.unlimited)}</Text>
                       </Box>
                     </HStack>
                     <Badge bg={uiColors.accentSoft} color={uiColors.accent} textTransform="none">
@@ -589,19 +529,19 @@ function CatalogPage() {
             top={{ base: 2, md: "50%" }}
             left="50%"
             transform={{ base: "translateX(-50%)", md: "translate(-50%, -50%)" }}
-            w={{ base: "calc(100% - 8px)", md: "512px" }}
+            w={{ base: "calc(100% - 8px)", md: "560px" }}
             maxH={{ base: "calc(100vh - 8px)", md: "calc(100vh - 32px)" }}
             borderRadius="14px"
             overflow="hidden"
             boxShadow="0px 25px 50px -12px rgba(0,0,0,0.25)"
             onClick={(event) => event.stopPropagation()}
           >
-            <Flex px={4} h="61px" align="center" justify="space-between" borderBottomWidth="1px" borderColor={uiColors.border}>
+            <Flex px={5} h="64px" align="center" justify="space-between" borderBottomWidth="1px" borderColor={uiColors.border}>
               <Text fontWeight="800" fontSize={{ base: "lg", md: "20px" }} color={uiColors.textPrimary}>{t.modal.title}</Text>
               <IconButton aria-label="Yopish" icon={<XMarkIcon width={18} />} variant="ghost" onClick={closeBuyModal} />
             </Flex>
 
-            <Grid templateColumns="repeat(3,1fr)" h="54px" borderBottomWidth="1px" borderColor={uiColors.border}>
+            <Grid templateColumns="repeat(3,1fr)" h="58px" borderBottomWidth="1px" borderColor={uiColors.border}>
               <Box
                 borderBottomWidth="2px"
                 borderColor={activeOrderTab === "self" ? uiColors.accent : "transparent"}
@@ -637,14 +577,14 @@ function CatalogPage() {
               </Box>
             </Grid>
 
-            <Box bg="rgba(248,250,252,0.6)" px={4} py={6} maxH={{ base: "54vh", md: "500px" }} overflowY="auto">
-              <SurfaceCard p={3} boxShadow={uiShadows.soft} mb={6}>
+            <Box bg="rgba(248,250,252,0.6)" px={5} py={7} maxH={{ base: "54vh", md: "500px" }} overflowY="auto">
+              <SurfaceCard p={4} boxShadow={uiShadows.soft} mb={8}>
                 <Flex justify="space-between" align="center">
                   <HStack spacing={3}>
                     <CountryFlag code={buyPlan.countryCode} size={32} />
                     <Box>
                       <Text fontSize="sm" fontWeight="700" color={uiColors.textPrimary}>{buyPlan.destination}</Text>
-                      <Text fontSize="sm" color={uiColors.textSecondary}>{formatDataLabel(buyPlan)} • {buyPlan.validityDays} {t.units.day}</Text>
+                      <Text fontSize="sm" color={uiColors.textSecondary}>{formatPackageDataLabel(buyPlan, t.units.unlimited)} • {buyPlan.validityDays} {t.units.day}</Text>
                     </Box>
                   </HStack>
                   <Text fontSize={{ base: "22px", md: "26px" }} fontWeight="700" color={uiColors.textPrimary}>
@@ -655,7 +595,7 @@ function CatalogPage() {
 
               {activeOrderTab === "group" ? (
                 <>
-                  <Flex justify="space-between" align="center" mb={4}>
+                  <Flex justify="space-between" align="center" mb={5}>
                     <Text fontWeight="700" fontSize={{ base: "16px", md: "18px" }} color="#0a0a0a">
                       {t.modal.groups} ({selectedGroups.length})
                     </Text>
@@ -695,7 +635,7 @@ function CatalogPage() {
                     </SurfaceCard>
                   ) : null}
 
-                  <VStack align="stretch" spacing={5}>
+                  <VStack align="stretch" spacing={6}>
                     {selectedGroups.map((group) => (
                       <SurfaceCard key={group.id} position="relative" p={3} borderRadius="13px" boxShadow="0px 1px 16.8px rgba(0,0,0,0.17)">
                         <IconButton
@@ -703,10 +643,8 @@ function CatalogPage() {
                           size="xs"
                           variant="ghost"
                           color="#b91c1c"
-                          bg="#fee2e2"
-                          borderWidth="1px"
-                          borderColor="#fecaca"
-                          _hover={{ bg: "#fecaca", color: "#991b1b" }}
+                          bg="#fef2f2"
+                          _hover={{ bg: "#fee2e2", color: "#991b1b" }}
                           position="absolute"
                           top={2.5}
                           right={2.5}
@@ -793,16 +731,34 @@ function CatalogPage() {
                     </Grid>
                   ) : null}
                 </>
+              ) : activeOrderTab === "self" ? (
+                <SurfaceCard p={4} borderRadius="12px" boxShadow={uiShadows.soft}>
+                  <HStack
+                    borderWidth="1px"
+                    borderColor="#d1d9e4"
+                    borderRadius="10px"
+                    bg="#f8fafc"
+                    px={3}
+                    py={3}
+                    align="start"
+                    spacing={2}
+                  >
+                    <InformationCircleIcon width={18} color="#62748e" />
+                    <Text fontSize="sm" color="#475569" lineHeight="1.45">
+                      {selfOrderHelperText}
+                    </Text>
+                  </HStack>
+                </SurfaceCard>
               ) : (
                 <>
-                  <Flex justify="space-between" align="center" mb={4}>
+                  <Flex justify="space-between" align="center" mb={5}>
                     <Text fontWeight="700" fontSize={{ base: "16px", md: "18px" }} color="#0a0a0a">{t.modal.customers} ({customers.length})</Text>
                     <AppButton variant="ghost" h="32px" borderRadius="26px" borderColor="#8294ac" borderWidth="1px" leftIcon={<PlusIcon width={14} />} onClick={addCustomer}>
                       {t.modal.addCustomer}
                     </AppButton>
                   </Flex>
 
-                  <VStack align="stretch" spacing={5}>
+                  <VStack align="stretch" spacing={6}>
                     {customers.map((customer, index) => (
                       <SurfaceCard key={customer.id} position="relative" p={6} borderRadius="13px" boxShadow="0px 1px 16.8px rgba(0,0,0,0.17)">
                         <IconButton
@@ -810,10 +766,8 @@ function CatalogPage() {
                           size="sm"
                           variant="ghost"
                           color="#b91c1c"
-                          bg="#fee2e2"
-                          borderWidth="1px"
-                          borderColor="#fecaca"
-                          _hover={{ bg: "#fecaca", color: "#991b1b" }}
+                          bg="#fef2f2"
+                          _hover={{ bg: "#fee2e2", color: "#991b1b" }}
                           position="absolute"
                           top={3}
                           right={3}
@@ -961,7 +915,7 @@ function CatalogPage() {
                 </>
               )}
 
-              <Text mt={8} mb={4} fontWeight="700" fontSize="sm" color="#0a0a0a">{t.modal.paymentMethod}</Text>
+              <Text mt={10} mb={5} fontWeight="700" fontSize="sm" color="#0a0a0a">{t.modal.paymentMethod}</Text>
               <Box bg="rgba(254,79,24,0.05)" borderWidth="1px" borderColor="rgba(254,79,24,0.2)" borderRadius="10px" px={3} py={4}>
                 <HStack spacing={3}>
                   <Box w="38px" h="38px" borderRadius="4px" bg="white" borderWidth="1px" borderColor={uiColors.border} display="grid" placeItems="center">
@@ -975,7 +929,7 @@ function CatalogPage() {
               </Box>
             </Box>
 
-            <Box borderTopWidth="1px" borderColor={uiColors.border} bg="white" px={4} py={4}>
+            <Box borderTopWidth="1px" borderColor={uiColors.border} bg="white" px={5} py={5}>
               <VStack align="stretch" spacing={2} mb={3}>
                 <HStack justify="space-between">
                   <Text fontSize="sm" color="#45556c">{t.modal.summary.packagePrice} ({customerCount} ta)</Text>

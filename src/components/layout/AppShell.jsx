@@ -1,12 +1,11 @@
 import {
   Box,
   Flex,
-  IconButton,
   useBreakpointValue
 } from "@chakra-ui/react";
-import { Bars3Icon } from "@heroicons/react/24/outline";
 import { useState } from "react";
 import { uiColors } from "../../design-system/tokens";
+import AppTopbar from "./AppTopbar";
 import SidebarNav from "./SidebarNav";
 
 function AppShell({ children }) {
@@ -45,21 +44,28 @@ function AppShell({ children }) {
         </Box>
       ) : null}
 
-      <Box as="main" flex="1" minW={0} p={{ base: 4, md: 6, xl: 8 }} position="relative">
-        {!isDesktop ? (
-          <IconButton
-            aria-label="Menyu"
-            icon={<Bars3Icon width={20} />}
-            onClick={onOpen}
-            variant="outline"
+      <Box as="main" flex="1" minW={0} position="relative">
+        <AppTopbar isDesktop={Boolean(isDesktop)} onOpenMenu={onOpen} />
+        <Box
+          pt={{ base: "76px", md: "84px", xl: "88px" }}
+          px={{ base: 3, md: 5, xl: 6 }}
+          pb={{ base: 3, md: 5, xl: 6 }}
+        >
+          <Box
+            w="full"
+            maxW="1700px"
+            mx="auto"
+            minH="calc(100vh - 88px - 24px)"
             bg="white"
-            position="sticky"
-            top={2}
-            zIndex={20}
-            mb={3}
-          />
-        ) : null}
-        {children}
+            borderWidth="1px"
+            borderColor="#d6dbe4"
+            borderRadius={{ base: "14px", md: "18px", xl: "21px" }}
+            p={{ base: 4, md: 6, xl: 8 }}
+            overflow="clip"
+          >
+            {children}
+          </Box>
+        </Box>
       </Box>
     </Flex>
   );

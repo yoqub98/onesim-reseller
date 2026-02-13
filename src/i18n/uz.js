@@ -67,7 +67,7 @@ const uz = {
     panelClose: "Yopish",
     modal: {
       title: "Buyurtma Rasmiylashtirish",
-      tabSelf: "O'zim uchun",
+      tabSelf: "Tur-agent nomiga",
       tabCustomer: "Mijoz uchun",
       tabGroup: "Guruh uchun",
       customers: "Mijozlar",
@@ -94,6 +94,8 @@ const uz = {
       },
       helperOperator:
         "Nothing will be sent to customers, you can print out all QR codes and handle delivering yourself",
+      helperSelf:
+        "Bu eSIM hech bir mijozga biriktirilmaydi. QR-kod va o'rnatish havolalari buyurtma tasdiqlangandan so'ng sizga darhol yuboriladi. Buyurtmadan keyin uni Mening buyurtmalarim sahifasida topasiz.",
       labels: {
         fullName: "Ism Familiya",
         phone: "+998",
@@ -163,6 +165,135 @@ const uz = {
       email: "Email yuborish uchun email majburiy",
       group: "Guruh rejimi uchun guruh tanlang",
       schedule: "Vaqt belgilash uchun sana/vaqt kiriting"
+    }
+  },
+  orders: {
+    title: "Buyurtmalar tarixi",
+    subtitle: "Mijoz, guruh va tur-agent buyurtmalarini boshqaring",
+    tabs: {
+      client: "Mijozlar uchun",
+      group: "Guruhlar uchun",
+      self: "Tur-agent nomiga"
+    },
+    searchPlaceholder: {
+      client: "Buyurtma ID, mijoz ismi, telefon yoki email bo'yicha qidiring",
+      group: "Buyurtma ID yoki guruh nomi bo'yicha qidiring",
+      self: "Buyurtma ID yoki paket nomi bo'yicha qidiring"
+    },
+    refresh: "Yangilash",
+    filter: "Filtrlash",
+    loadError: "Buyurtmalarni yuklashda xatolik yuz berdi",
+    empty: "Mos buyurtmalar topilmadi",
+    actions: {
+      openDetails: "Tafsilotlarni ochish",
+      openModal: "Tezkor ko'rish"
+    },
+    table: {
+      id: "ID",
+      customer: "Mijoz",
+      group: "Guruh",
+      package: "Paket",
+      count: "Soni",
+      usage: "Internet sarfi",
+      date: "Sana",
+      status: "Holat",
+      amount: "Narx",
+      actions: "Amallar",
+      memberName: "Mijoz ismi",
+      contact: "Aloqa",
+      delivery: "Yetkazish",
+      deliveryStatus: "Yetkazish holati",
+      esimStatus: "eSIM holati",
+      traffic: "Trafik"
+    },
+    deliveryMethods: {
+      sms: "SMS",
+      email: "Email",
+      manual: "Qo'lda"
+    },
+    deliveryStatus: {
+      sent: "Yuborilgan",
+      pending: "Kutilmoqda"
+    },
+    statusLabels: {
+      pending: "Kutilmoqda",
+      active: "Faol",
+      expired: "Muddati tugagan",
+      failed: "Muvaffaqiyatsiz"
+    },
+    modalSelf: {
+      title: "Buyurtma tafsilotlari",
+      helper: "eSIM o'rnatish uchun QR-kodni skanerlang yoki ICCID kodidan foydalaning.",
+      iccid: "ICCID",
+      status: "Holat",
+      traffic: "Trafik",
+      copy: "Nusxalash",
+      close: "Yopish",
+      qrAlt: "eSIM QR kodi"
+    },
+    modalGroup: {
+      orderId: "Buyurtma ID",
+      close: "Yopish",
+      stats: {
+        totalCustomers: "Jami mijozlar",
+        packagePrice: "Paket narxi",
+        totalPaid: "Jami to'langan"
+      }
+    },
+    detail: {
+      loadError: "Buyurtma tafsilotlarini yuklab bo'lmadi",
+      notFoundTitle: "Buyurtma topilmadi",
+      notFoundDescription: "Buyurtma o'chirilgan yoki mavjud emas.",
+      back: "Buyurtmalarga qaytish",
+      orderTitle: "Buyurtma",
+      customer: "Mijoz",
+      timeline: {
+        created: "Buyurtma",
+        paid: "To'lov",
+        sent: "Yuborildi",
+        activated: "Faollashtirildi"
+      },
+      usageTitle: "Internet sarfi",
+      used: "Foydalanilgan hajm",
+      remainingDays: "Qolgan kunlar",
+      iccid: "ICCID",
+      packageTitle: "Paket ma'lumotlari",
+      packageCode: "Paket kodi",
+      operators: "Operatorlar",
+      network: "Tarmoq",
+      hotspot: "Hotspot",
+      validity: "Amal qilish muddati",
+      available: "Mavjud",
+      unavailable: "Mavjud emas",
+      days: "kun",
+      installation: "O'rnatish",
+      installationHint: "Mijoz telefonida QR kodni skaner qilib eSIM o'rnatiladi.",
+      qrAlt: "eSIM o'rnatish QR kodi",
+      totalPaid: "To'langan summa",
+      actions: {
+        successTitle: "Amal bajarildi",
+        errorTitle: "Xatolik",
+        errorDescription: "Amalni bajarib bo'lmadi. Qayta urinib ko'ring.",
+        addPackage: "Paket qo'shish",
+        resend: "eSIM qayta yuborish",
+        pause: "Vaqtincha to'xtatish",
+        cancel: "Bekor qilish",
+        topup: "Top-up",
+        resendDone: "QR kod va yo'riqnoma qayta yuborildi",
+        pauseDone: "eSIM vaqtincha to'xtatildi",
+        cancelDone: "eSIM bekor qilindi",
+        topupDone: "Top-up amali muvaffaqiyatli bajarildi",
+        topupTitle: "Yo'naltirish",
+        topupNavigate: "Top-up bo'limiga yo'naltirish tayyor"
+      }
+    },
+    toast: {
+      orderCreatedTitle: "Buyurtma yaratildi",
+      orderCreatedPrefix: "Yangi buyurtma ID",
+      copySuccessTitle: "Nusxalandi",
+      copySuccessDescription: "muvaffaqiyatli nusxalandi",
+      copyErrorTitle: "Nusxalash xatoligi",
+      copyErrorDescription: "Clipboard'ga yozib bo'lmadi"
     }
   },
   status: {
