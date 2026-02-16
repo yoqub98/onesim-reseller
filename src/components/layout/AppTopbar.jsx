@@ -1,6 +1,7 @@
 import { BellIcon, Bars3Icon } from "@heroicons/react/24/outline";
 import { Box, HStack, IconButton, Text } from "@chakra-ui/react";
 import { CircleFlag } from "react-circle-flags";
+import { CURRENCY_USD, CURRENCY_UZS } from "../../constants/currency";
 import { useCurrency } from "../../context/CurrencyContext";
 import { useLocale } from "../../context/LocaleContext";
 import { uiColors } from "../../design-system/tokens";
@@ -46,8 +47,8 @@ function AppTopbar({ isDesktop, onOpenMenu }) {
         <SegmentedControl
           value={currency}
           options={[
-            { value: "UZS", label: "UZS" },
-            { value: "USD", label: "USD" }
+            { value: CURRENCY_UZS, label: CURRENCY_UZS },
+            { value: CURRENCY_USD, label: CURRENCY_USD }
           ]}
           onChange={setCurrency}
         />

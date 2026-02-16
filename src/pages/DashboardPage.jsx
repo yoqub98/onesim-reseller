@@ -8,53 +8,47 @@ import {
   Text,
   VStack
 } from "@chakra-ui/react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { BanknotesIcon, SignalIcon, ShoppingCartIcon } from "@heroicons/react/24/outline";
 import StatCard from "../components/dashboard/StatCard";
 import RecentOrdersTable from "../components/dashboard/RecentOrdersTable";
+import { ORDER_STATUS_ACTIVE } from "../constants/statuses";
 import { useCurrency } from "../context/CurrencyContext";
+import { useServiceData } from "../hooks/useServiceData";
 import { ordersService } from "../services/ordersService";
 import { earningsService } from "../services/earningsService";
 import { formatMoneyFromUsd } from "../utils/currency";
 import uz from "../i18n/uz";
 
+const EMPTY_LIST = [];
+
+async function loadDashboardData() {
+  const [orders, earnings] = await Promise.all([
+    ordersService.listOrders(),
+    earningsService.getSummary()
+  ]);
+  return { orders, earnings };
+}
+
 function DashboardPage() {
   const { currency } = useCurrency();
-  const [orders, setOrders] = useState([]);
-  const [earnings, setEarnings] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  const fetchData = useCallback(async () => {
-    setIsLoading(true);
-    setError("");
-
-    try {
-      const [ordersData, earningsData] = await Promise.all([
-        ordersService.listOrders(),
-        earningsService.getSummary()
-      ]);
-
-      setOrders(ordersData);
-      setEarnings(earningsData);
-    } catch (err) {
-      setError(err?.message || "Dashboard yuklanmadi");
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const {
+    data: dashboardData,
+    loading: isLoading,
+    error: loadError,
+    refetch
+  } = useServiceData(loadDashboardData);
+  const orders = dashboardData?.orders || EMPTY_LIST;
+  const earnings = dashboardData?.earnings || null;
+  const error = loadError ? (loadError.message || "Dashboard yuklanmadi") : "";
 
   const activeEsimsCount = useMemo(
-    () => orders.filter((order) => order.status === "active").length,
+    () => orders.filter((order) => order.status === ORDER_STATUS_ACTIVE).length,
     [orders]
   );
 
   return (
-    <VStack align="stretch" spacing={6}>
+    <VStack align="stretch" spacing={8} maxW="1320px" mx="auto">
       <Box>
         <Heading size="lg">{uz.dashboard.title}</Heading>
         <Text color="gray.600" mt={1}>{uz.dashboard.subtitle}</Text>
@@ -72,7 +66,7 @@ function DashboardPage() {
           gap={3}
         >
           <Text color="red.700" fontSize="sm">{error}</Text>
-          <Button ml="auto" size="sm" onClick={fetchData}>{uz.common.retry}</Button>
+          <Button ml="auto" size="sm" onClick={refetch}>{uz.common.retry}</Button>
         </Box>
       ) : null}
 

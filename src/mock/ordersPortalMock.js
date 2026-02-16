@@ -1,3 +1,4 @@
+// Mock data for ordersService portal views — see src/services/types.js for shape definitions
 const now = Date.now();
 
 const hoursAgo = (value) => new Date(now - value * 60 * 60 * 1000).toISOString();

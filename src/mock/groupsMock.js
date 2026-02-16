@@ -1,3 +1,4 @@
+// Mock data for groupsService — see src/services/types.js for shape definitions
 export const groupsMock = [
   {
     id: "GRP-001",

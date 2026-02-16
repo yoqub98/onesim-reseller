@@ -1,23 +1,11 @@
 import { Box, Flex, HStack, Text, VStack } from "@chakra-ui/react";
 import {
-  BanknotesIcon,
-  HomeIcon as HomeOutlineIcon,
-  RectangleStackIcon,
-  Squares2X2Icon,
   ArrowLeftOnRectangleIcon,
-  UserGroupIcon
 } from "@heroicons/react/24/outline";
 import { NavLink } from "react-router-dom";
 import { BriefcaseIcon } from "@heroicons/react/24/solid";
+import { SIDEBAR_NAV_ITEMS } from "../../constants/navigation";
 import { uiColors, uiRadii } from "../../design-system/tokens";
-
-const navItems = [
-  { to: "/", label: "Boshqaruv Paneli", icon: HomeOutlineIcon },
-  { to: "/catalog", label: "eSIM Tariflar", icon: Squares2X2Icon },
-  { to: "/orders", label: "Buyurtmalarim", icon: RectangleStackIcon },
-  { to: "/groups", label: "Mijozlar Guruhlari", icon: UserGroupIcon },
-  { to: "/earnings", label: "Mening Daromadlarim", icon: BanknotesIcon }
-];
 
 function SidebarNav({ onNavigate }) {
   return (
@@ -56,7 +44,7 @@ function SidebarNav({ onNavigate }) {
       </Box>
 
       <VStack align="stretch" spacing={2} px={4} py={6}>
-        {navItems.map((item) => {
+        {SIDEBAR_NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           return (
             <NavLink key={item.to} to={item.to} onClick={onNavigate}>

@@ -25,6 +25,9 @@ import { useLocation, useNavigate } from "react-router-dom";
 import CountryFlag from "../components/common/CountryFlag";
 import StepIndicator from "../components/order/StepIndicator";
 import { useCurrency } from "../context/CurrencyContext";
+import { DELIVERY_EMAIL, DELIVERY_MANUAL, DELIVERY_SMS } from "../constants/delivery";
+import { useFormFields } from "../hooks/useFormFields";
+import { useServiceData } from "../hooks/useServiceData";
 import uz from "../i18n/uz";
 import { catalogService } from "../services/catalogService";
 import { groupsService } from "../services/groupsService";
@@ -36,26 +39,31 @@ const steps = [
   { id: "mode", label: uz.order.steps.mode },
   { id: "checkout", label: uz.order.steps.checkout }
 ];
+const EMPTY_LIST = [];
+
+async function loadNewOrderData() {
+  const [plans, groups] = await Promise.all([catalogService.getPlans(), groupsService.listGroups()]);
+  return { plans, groups };
+}
 
 function NewOrderPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { currency } = useCurrency();
-  const [plans, setPlans] = useState([]);
-  const [groups, setGroups] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: newOrderData, loading: isLoading, error: loadError } = useServiceData(loadNewOrderData);
+  const plans = newOrderData?.plans || EMPTY_LIST;
+  const groups = newOrderData?.groups || EMPTY_LIST;
+  const error = loadError ? (loadError.message || "Yangi buyurtma sahifasi yuklanmadi") : "";
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState("");
   const [formError, setFormError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [step, setStep] = useState(1);
 
-  const [selectedPlanId, setSelectedPlanId] = useState("");
+  const [selectedPlanId, setSelectedPlanId] = useState(location.state?.preselectedPlanId || "");
   const [mode, setMode] = useState("self");
-  const [deliveryMethod, setDeliveryMethod] = useState("sms");
+  const [deliveryMethod, setDeliveryMethod] = useState(DELIVERY_SMS);
   const [scheduleType, setScheduleType] = useState("now");
-
-  const [fields, setFields] = useState({
+  const { fields, setField } = useFormFields({
     customerName: "",
     phone: "",
     email: "",
@@ -64,40 +72,10 @@ function NewOrderPage() {
   });
 
   useEffect(() => {
-    const preselectedPlanId = location.state?.preselectedPlanId;
-
-    if (preselectedPlanId) {
-      setSelectedPlanId(preselectedPlanId);
+    if (!selectedPlanId && plans.length > 0) {
+      setSelectedPlanId(plans[0].id);
     }
-  }, [location.state]);
-
-  useEffect(() => {
-    const loadPageData = async () => {
-      setIsLoading(true);
-      setError("");
-
-      try {
-        const [planData, groupsData] = await Promise.all([
-          catalogService.getPlans(),
-          groupsService.listGroups()
-        ]);
-
-        setPlans(planData);
-        setGroups(groupsData);
-
-        if (!selectedPlanId && planData.length > 0) {
-          setSelectedPlanId(planData[0].id);
-        }
-      } catch (err) {
-        setError(err?.message || "Yangi buyurtma sahifasi yuklanmadi");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadPageData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [plans, selectedPlanId]);
 
   const selectedPlan = useMemo(
     () => plans.find((plan) => plan.id === selectedPlanId) || null,
@@ -124,12 +102,12 @@ function NewOrderPage() {
         return false;
       }
 
-      if (deliveryMethod === "sms" && !fields.phone.trim()) {
+      if (deliveryMethod === DELIVERY_SMS && !fields.phone.trim()) {
         setFormError(uz.order.errors.phone);
         return false;
       }
 
-      if (deliveryMethod === "email" && !fields.email.trim()) {
+      if (deliveryMethod === DELIVERY_EMAIL && !fields.email.trim()) {
         setFormError(uz.order.errors.email);
         return false;
       }
@@ -216,7 +194,7 @@ function NewOrderPage() {
   };
 
   return (
-    <VStack align="stretch" spacing={5}>
+    <VStack align="stretch" spacing={8} maxW="1320px" mx="auto">
       <Box>
         <Heading size="lg">{uz.order.title}</Heading>
         <Text color="gray.600" mt={1}>{uz.order.subtitle}</Text>
@@ -329,7 +307,7 @@ function NewOrderPage() {
                     borderRadius="md"
                     px={3}
                     value={fields.customerName}
-                    onChange={(event) => setFields((prev) => ({ ...prev, customerName: event.target.value }))}
+                    onChange={(event) => setField("customerName", event.target.value)}
                   />
                 </Box>
 
@@ -345,7 +323,7 @@ function NewOrderPage() {
                     px={3}
                     placeholder="998901234567"
                     value={fields.phone}
-                    onChange={(event) => setFields((prev) => ({ ...prev, phone: event.target.value }))}
+                    onChange={(event) => setField("phone", event.target.value)}
                   />
                 </Box>
 
@@ -360,7 +338,7 @@ function NewOrderPage() {
                     borderRadius="md"
                     px={3}
                     value={fields.email}
-                    onChange={(event) => setFields((prev) => ({ ...prev, email: event.target.value }))}
+                    onChange={(event) => setField("email", event.target.value)}
                   />
                 </Box>
               </Grid>
@@ -376,7 +354,7 @@ function NewOrderPage() {
                   borderRadius="md"
                   px={2}
                   value={fields.groupId}
-                  onChange={(event) => setFields((prev) => ({ ...prev, groupId: event.target.value }))}
+                  onChange={(event) => setField("groupId", event.target.value)}
                 >
                   <option value="">Guruh tanlang</option>
                   {groups.map((group) => (
@@ -392,32 +370,32 @@ function NewOrderPage() {
               <Text fontWeight="semibold" mb={3}>{uz.order.fields.deliveryMethod}</Text>
               <VStack align="stretch" spacing={2}>
                 <Button
-                  variant={deliveryMethod === "sms" ? "solid" : "outline"}
-                  bg={deliveryMethod === "sms" ? "#FE4F18" : "transparent"}
-                  color={deliveryMethod === "sms" ? "white" : "gray.800"}
-                  _hover={{ bg: deliveryMethod === "sms" ? "#e74716" : "gray.50" }}
+                  variant={deliveryMethod === DELIVERY_SMS ? "solid" : "outline"}
+                  bg={deliveryMethod === DELIVERY_SMS ? "#FE4F18" : "transparent"}
+                  color={deliveryMethod === DELIVERY_SMS ? "white" : "gray.800"}
+                  _hover={{ bg: deliveryMethod === DELIVERY_SMS ? "#e74716" : "gray.50" }}
                   leftIcon={<DevicePhoneMobileIcon width={16} />}
-                  onClick={() => setDeliveryMethod("sms")}
+                  onClick={() => setDeliveryMethod(DELIVERY_SMS)}
                 >
                   {uz.order.delivery.sms}
                 </Button>
                 <Button
-                  variant={deliveryMethod === "email" ? "solid" : "outline"}
-                  bg={deliveryMethod === "email" ? "#FE4F18" : "transparent"}
-                  color={deliveryMethod === "email" ? "white" : "gray.800"}
-                  _hover={{ bg: deliveryMethod === "email" ? "#e74716" : "gray.50" }}
+                  variant={deliveryMethod === DELIVERY_EMAIL ? "solid" : "outline"}
+                  bg={deliveryMethod === DELIVERY_EMAIL ? "#FE4F18" : "transparent"}
+                  color={deliveryMethod === DELIVERY_EMAIL ? "white" : "gray.800"}
+                  _hover={{ bg: deliveryMethod === DELIVERY_EMAIL ? "#e74716" : "gray.50" }}
                   leftIcon={<EnvelopeIcon width={16} />}
-                  onClick={() => setDeliveryMethod("email")}
+                  onClick={() => setDeliveryMethod(DELIVERY_EMAIL)}
                 >
                   {uz.order.delivery.email}
                 </Button>
                 <Button
-                  variant={deliveryMethod === "manual" ? "solid" : "outline"}
-                  bg={deliveryMethod === "manual" ? "#FE4F18" : "transparent"}
-                  color={deliveryMethod === "manual" ? "white" : "gray.800"}
-                  _hover={{ bg: deliveryMethod === "manual" ? "#e74716" : "gray.50" }}
+                  variant={deliveryMethod === DELIVERY_MANUAL ? "solid" : "outline"}
+                  bg={deliveryMethod === DELIVERY_MANUAL ? "#FE4F18" : "transparent"}
+                  color={deliveryMethod === DELIVERY_MANUAL ? "white" : "gray.800"}
+                  _hover={{ bg: deliveryMethod === DELIVERY_MANUAL ? "#e74716" : "gray.50" }}
                   leftIcon={<UserCircleIcon width={16} />}
-                  onClick={() => setDeliveryMethod("manual")}
+                  onClick={() => setDeliveryMethod(DELIVERY_MANUAL)}
                 >
                   {uz.order.delivery.manual}
                 </Button>
@@ -459,7 +437,7 @@ function NewOrderPage() {
                     borderRadius="md"
                     px={3}
                     value={fields.scheduledAt}
-                    onChange={(event) => setFields((prev) => ({ ...prev, scheduledAt: event.target.value }))}
+                    onChange={(event) => setField("scheduledAt", event.target.value)}
                   />
                 ) : null}
               </VStack>

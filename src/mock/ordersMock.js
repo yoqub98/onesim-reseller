@@ -1,3 +1,4 @@
+// Mock data for ordersService — see src/services/types.js for shape definitions
 export const recentOrdersMock = [
   {
     id: "ORD-1001",

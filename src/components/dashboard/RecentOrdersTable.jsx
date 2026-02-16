@@ -1,4 +1,10 @@
 import {
+  ORDER_STATUS_ACTIVE,
+  ORDER_STATUS_EXPIRED,
+  ORDER_STATUS_FAILED,
+  ORDER_STATUS_PENDING
+} from "../../constants/statuses";
+import {
   Badge,
   Box,
   HStack,
@@ -12,10 +18,10 @@ import { formatMoneyFromUsd } from "../../utils/currency";
 import CountryFlag from "../common/CountryFlag";
 
 const statusColorMap = {
-  pending: "orange",
-  active: "green",
-  expired: "gray",
-  failed: "red",
+  [ORDER_STATUS_PENDING]: "orange",
+  [ORDER_STATUS_ACTIVE]: "green",
+  [ORDER_STATUS_EXPIRED]: "gray",
+  [ORDER_STATUS_FAILED]: "red",
   not_activated: "purple"
 };
 

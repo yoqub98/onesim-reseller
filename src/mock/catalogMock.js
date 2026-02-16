@@ -1,3 +1,4 @@
+// Mock data for catalogService — see src/services/types.js for shape definitions
 export const plansMock = [
   {
     id: "PLN-UZ-5-7",

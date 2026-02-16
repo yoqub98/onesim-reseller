@@ -86,7 +86,9 @@ export function AppButton({
   );
 }
 
-export function AppIconButton({ variant = "soft", ...props }) {
+export function AppIconButton({ variant = "soft", icon, children, ...props }) {
+  const content = children ?? icon;
+
   return (
     <IconButton
       size="sm"
@@ -95,6 +97,8 @@ export function AppIconButton({ variant = "soft", ...props }) {
       {...baseButtonStyles}
       {...buttonVariants[variant]}
       {...props}
-    />
+    >
+      {content}
+    </IconButton>
   );
 }

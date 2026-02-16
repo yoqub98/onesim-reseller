@@ -1,16 +1,17 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { CURRENCY_USD, CURRENCY_UZS } from "../constants/currency";
 
 const CURRENCY_STORAGE_KEY = "onesim_currency";
 
 const CurrencyContext = createContext({
-  currency: "UZS",
+  currency: CURRENCY_UZS,
   setCurrency: () => {}
 });
 
 export function CurrencyProvider({ children }) {
   const [currency, setCurrency] = useState(() => {
     const stored = window.localStorage.getItem(CURRENCY_STORAGE_KEY);
-    return stored === "USD" ? "USD" : "UZS";
+    return stored === CURRENCY_USD ? CURRENCY_USD : CURRENCY_UZS;
   });
 
   useEffect(() => {
