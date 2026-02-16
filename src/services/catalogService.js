@@ -1,6 +1,12 @@
 import { plansMock } from "../mock/catalogMock";
 import { withDelay } from "./utils";
 
+/**
+ * Backend handoff:
+ * - Target endpoint: ENDPOINTS.catalog.plans
+ * - Contract reference: src/services/CONTRACTS.md#2-catalogservice
+ * - Row mapping helper: mapPackageRowToPlan() in src/services/supabaseMappers.js
+ */
 export const catalogService = {
   /**
    * Fetches reseller catalog plans.

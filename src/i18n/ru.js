@@ -171,6 +171,63 @@ const ru = {
     expired: "Истек",
     failed: "Ошибка",
     not_activated: "Не активирован"
+  },
+  auth: {
+    subtitle: "B2B Hamkorlik Portali",
+    or: "Или",
+    hero: {
+      title: "Оставайтесь на связи по всему миру",
+      subtitle:
+        "Предоставляйте вашим клиентам лучшие eSIM услуги через портал партнерства OneSIM."
+    },
+    login: {
+      title: "Вход в систему",
+      description: "Введите данные вашей учетной записи для продолжения",
+      signIn: "Войти",
+      signingIn: "Вход...",
+      forgotPassword: "Забыли пароль?",
+      googleSignIn: "Войти через Google",
+      noAccount: "Ещё не зарегистрированы?",
+      signUp: "Зарегистрироваться"
+    },
+    signup: {
+      title: "Регистрация",
+      description: "Введите данные компании для становления партнером",
+      register: "Зарегистрироваться",
+      registering: "Регистрация...",
+      companyInfo: "Информация о компании",
+      contactPerson: "Контактное лицо",
+      haveAccount: "Уже есть аккаунт?",
+      signIn: "Войти",
+      termsPrefix: "Нажимая «Зарегистрироваться», вы соглашаетесь с",
+      terms: "Условиями использования",
+      and: "и",
+      privacy: "Политикой конфиденциальности"
+    },
+    fields: {
+      email: "Email",
+      password: "Пароль",
+      passwordHelper: "Минимум 8 символов",
+      companyName: "Название компании",
+      legalName: "Официальное юридическое наименование",
+      inn: "ИНН",
+      address: "Адрес",
+      contactFullName: "ФИО",
+      contactPhone: "Телефон",
+      contractNumber: "Договор-номер",
+      contractHelper: "Опционально, будет присвоен после проверки",
+      placeholders: {
+        email: "name@company.com",
+        password: "••••••••",
+        companyName: "ООО «Пример»",
+        legalName: "Общество с ограниченной ответственностью «Пример»",
+        inn: "123456789",
+        address: "г. Ташкент, ул. Примерная, д. 123",
+        contactFullName: "Иванов Иван Иванович",
+        contactPhone: "+998 90 123 45 67",
+        contractNumber: "№ДОГ-2024-001"
+      }
+    }
   }
 };
 

@@ -23,6 +23,9 @@ import { ordersService } from "../services/ordersService";
 //   OrderInfoSummaryCard, PackageDetailsCard, OrderTimeline, OrderActionButtonsBar
 // Data: ordersService.getPortalOrderDetails(), ordersService.getPortalInstallLinks()
 
+// Backend handoff:
+// - Order action callbacks must write audit logs (order_action_logs)
+// - Action eligibility should be validated server-side
 async function loadOrderDetailsData(params) {
   const [order, links] = await Promise.all([
     ordersService.getPortalOrderDetails(params.orderId),

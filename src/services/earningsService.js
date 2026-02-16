@@ -1,6 +1,12 @@
 import { earningsSummaryMock } from "../mock/earningsMock";
 import { withDelay } from "./utils";
 
+/**
+ * Backend handoff:
+ * - Target endpoint: ENDPOINTS.earnings.summary
+ * - Contract reference: src/services/CONTRACTS.md#5-earningsservice
+ * - Preferred source: v_partner_dashboard_stats + mapper normalization
+ */
 export const earningsService = {
   /**
    * Fetches reseller earnings summary metrics.

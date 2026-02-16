@@ -8,6 +8,13 @@ import {
 } from "../constants/statuses";
 import { withDelay } from "./utils";
 
+/**
+ * Backend handoff:
+ * - Contract reference: src/services/CONTRACTS.md#4-ordersservice
+ * - Mapping helpers: src/services/supabaseMappers.js
+ * - Main DB table: public.orders (+ partner/group/customer joins)
+ * - Action auditing target: public.order_action_logs
+ */
 let ordersState = [...recentOrdersMock];
 let portalOrdersState = [...portalOrdersMock];
 const portalPackagesState = [...portalPackagesMock];

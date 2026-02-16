@@ -41,6 +41,10 @@ const steps = [
 ];
 const EMPTY_LIST = [];
 
+// Backend handoff:
+// - Reads plans/groups via catalogService + groupsService
+// - Writes order via ordersService.createOrder
+// - Input/output contract: src/services/CONTRACTS.md
 async function loadNewOrderData() {
   const [plans, groups] = await Promise.all([catalogService.getPlans(), groupsService.listGroups()]);
   return { plans, groups };

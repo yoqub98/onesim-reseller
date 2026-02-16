@@ -1,15 +1,22 @@
-import { BellIcon, Bars3Icon } from "@heroicons/react/24/outline";
+import { BellIcon, Bars3Icon, ArrowRightOnRectangleIcon } from "@heroicons/react/24/outline";
 import { Box, HStack, IconButton, Text } from "@chakra-ui/react";
-import { CircleFlag } from "react-circle-flags";
+import { useNavigate } from "react-router-dom";
 import { CURRENCY_USD, CURRENCY_UZS } from "../../constants/currency";
+import { useAuth } from "../../context/AuthContext";
 import { useCurrency } from "../../context/CurrencyContext";
-import { useLocale } from "../../context/LocaleContext";
 import { uiColors } from "../../design-system/tokens";
+import { LanguageSwitcher } from "../common/LanguageSwitcher";
 import { AppIconButton, SegmentedControl } from "../ui";
 
 function AppTopbar({ isDesktop, onOpenMenu }) {
   const { currency, setCurrency } = useCurrency();
-  const { locale, setLocale } = useLocale();
+  const { logout, user } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
 
   return (
     <Box
@@ -53,45 +60,7 @@ function AppTopbar({ isDesktop, onOpenMenu }) {
           onChange={setCurrency}
         />
 
-        <SegmentedControl
-          value={locale}
-          options={[
-            {
-              value: "uz",
-              label: (
-                <HStack spacing={1.5}>
-                  <Box w="14px" h="14px" borderRadius="full" overflow="hidden" flexShrink={0}>
-                    <CircleFlag countryCode="uz" height={14} />
-                  </Box>
-                  <Text textTransform="uppercase">uz</Text>
-                </HStack>
-              )
-            },
-            {
-              value: "ru",
-              label: (
-                <HStack spacing={1.5}>
-                  <Box w="14px" h="14px" borderRadius="full" overflow="hidden" flexShrink={0}>
-                    <CircleFlag countryCode="ru" height={14} />
-                  </Box>
-                  <Text textTransform="uppercase">ru</Text>
-                </HStack>
-              )
-            },
-            {
-              value: "en",
-              label: (
-                <HStack spacing={1.5}>
-                  <Box w="14px" h="14px" borderRadius="full" overflow="hidden" flexShrink={0}>
-                    <CircleFlag countryCode="gb" height={14} />
-                  </Box>
-                  <Text textTransform="uppercase">en</Text>
-                </HStack>
-              )
-            }
-          ]}
-          onChange={setLocale}
-        />
+        <LanguageSwitcher />
 
         <AppIconButton
           aria-label="Bildirishnomalar"
@@ -103,8 +72,12 @@ function AppTopbar({ isDesktop, onOpenMenu }) {
 
         <HStack spacing={2} pl={{ base: 1, md: 3 }} borderLeftWidth={{ base: 0, md: "1px" }} borderColor={uiColors.border}>
           <Box textAlign="right" display={{ base: "none", md: "block" }}>
-            <Text fontSize="xs" fontWeight="700" color={uiColors.textPrimary}>Aziz Rakhimov</Text>
-            <Text fontSize="11px" color={uiColors.textSecondary}>Agent Admin</Text>
+            <Text fontSize="xs" fontWeight="700" color={uiColors.textPrimary}>
+              {user?.company_name || "Aziz Rakhimov"}
+            </Text>
+            <Text fontSize="11px" color={uiColors.textSecondary}>
+              {user?.email || "Agent Admin"}
+            </Text>
           </Box>
           <Box
             w="36px"
@@ -119,9 +92,21 @@ function AppTopbar({ isDesktop, onOpenMenu }) {
             fontWeight="700"
             fontSize="xs"
           >
-            AR
+            {user?.company_name?.charAt(0) || "AR"}
           </Box>
         </HStack>
+
+        {/* Logout Button */}
+        <AppIconButton
+          aria-label="Chiqish"
+          variant="ghost"
+          icon={<ArrowRightOnRectangleIcon width={15} />}
+          onClick={handleLogout}
+          h="36px"
+          minW="36px"
+          color={uiColors.textSecondary}
+          _hover={{ color: uiColors.accent, bg: uiColors.accentSoft }}
+        />
       </HStack>
     </Box>
   );

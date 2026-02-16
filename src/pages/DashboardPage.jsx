@@ -22,6 +22,9 @@ import uz from "../i18n/uz";
 
 const EMPTY_LIST = [];
 
+// Backend handoff:
+// - Reads from ordersService.listOrders + earningsService.getSummary
+// - See src/services/CONTRACTS.md for expected response shapes
 async function loadDashboardData() {
   const [orders, earnings] = await Promise.all([
     ordersService.listOrders(),

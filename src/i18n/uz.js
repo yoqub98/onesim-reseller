@@ -296,12 +296,119 @@ const uz = {
       copyErrorDescription: "Clipboard'ga yozib bo'lmadi"
     }
   },
+  groups: {
+    title: "Mijozlar Guruhlari",
+    subtitle: "Guruhlarni boshqarish va tezkor buyurtmalar",
+    searchPlaceholder: "Qidirish: Guruh nomi, Davlat",
+    empty: "Guruhlar topilmadi",
+    loadError: "Guruhlarni yuklashda xatolik yuz berdi",
+    actions: {
+      newGroup: "Yangi Guruh",
+      edit: "Tahrirlash",
+      delete: "O'chirish",
+      details: "Batafsil",
+      attachPackage: "Paket biriktirish",
+      create: "Yaratish",
+      save: "Saqlash",
+      close: "Yopish",
+      cancel: "Bekor qilish"
+    },
+    labels: {
+      departure: "Ketish",
+      return: "Qaytish",
+      scheduled: "rejalashtirilgan",
+      unassignedPackage: "Paket biriktirilmagan",
+      members: "ta mijoz",
+      membersList: "Guruh a'zolari",
+      destination: "Davlat",
+      unknown: "Belgilanmagan"
+    },
+    form: {
+      createTitle: "Yangi guruh yaratish",
+      editTitle: "Guruhni tahrirlash",
+      helper: "Bu modal mock, backend integration keyin ulanadi",
+      name: "Guruh nomi",
+      namePlaceholder: "Masalan: Dubay Safari",
+      destination: "Yo'nalish",
+      destinationPlaceholder: "Masalan: BAA",
+      countryCode: "Davlat kodi",
+      departure: "Ketish sanasi",
+      return: "Qaytish sanasi",
+      members: "Mijozlar",
+      membersPlaceholder: "Har qator: Ism, Telefon, Email",
+      membersHelper: "Misol: Ali Valiyev, +998901112233, ali@example.com"
+    },
+    toast: {
+      createdTitle: "Guruh yaratildi",
+      updatedTitle: "Guruh yangilandi",
+      deletedTitle: "Guruh o'chirildi",
+      packageAttachedTitle: "Paket biriktirildi",
+      actionDescription: "Bu demo UI amali, backend ulanmagan"
+    }
+  },
   status: {
     pending: "Kutilmoqda",
     active: "Faol",
     expired: "Muddati tugagan",
     failed: "Xatolik",
     not_activated: "Faollashmagan"
+  },
+  auth: {
+    subtitle: "B2B Hamkorlik Portali",
+    or: "Yoki",
+    hero: {
+      title: "Dunyo bo'ylab aloqada qoling",
+      subtitle:
+        "OneSIM hamkorlik portali orqali mijozlaringizga eng yaxshi eSIM xizmatlarini taqdim eting."
+    },
+    login: {
+      title: "Tizimga kirish",
+      description: "Davom etish uchun hisob ma'lumotlaringizni kiriting",
+      signIn: "Kirish",
+      signingIn: "Kirilmoqda...",
+      forgotPassword: "Parolni unutdingizmi?",
+      googleSignIn: "Google orqali kirish",
+      noAccount: "Ro'yxatdan o'tmaganmisiz?",
+      signUp: "Ro'yxatdan o'tish"
+    },
+    signup: {
+      title: "Ro'yxatdan o'tish",
+      description: "Hamkor bo'lish uchun kompaniya ma'lumotlarini kiriting",
+      register: "Ro'yxatdan o'tish",
+      registering: "Ro'yxatdan o'tilmoqda...",
+      companyInfo: "Kompaniya haqida ma'lumot",
+      contactPerson: "Mas'ul shaxs",
+      haveAccount: "Akkount mavjudmi?",
+      signIn: "Kirish",
+      termsPrefix: "«Ro'yxatdan o'tish» tugmasini bosish orqali siz",
+      terms: "Foydalanish shartlari",
+      and: "va",
+      privacy: "Maxfiylik siyosati"
+    },
+    fields: {
+      email: "Email manzil",
+      password: "Parol",
+      passwordHelper: "Kamida 8 belgi",
+      companyName: "Kompaniya nomi",
+      legalName: "Rasmiy yuridik nomi",
+      inn: "STIR",
+      address: "Manzil",
+      contactFullName: "F.I.Sh",
+      contactPhone: "Telefon raqam",
+      contractNumber: "Shartnoma raqami",
+      contractHelper: "Ixtiyoriy, tekshiruvdan keyin beriladi",
+      placeholders: {
+        email: "name@company.com",
+        password: "••••••••",
+        companyName: "MChJ «Misol»",
+        legalName: "Mas'uliyati cheklangan jamiyat «Misol»",
+        inn: "123456789",
+        address: "Toshkent sh., Misol ko'chasi, 123-uy",
+        contactFullName: "Ivanov Ivan Ivanovich",
+        contactPhone: "+998 90 123 45 67",
+        contractNumber: "№SHART-2024-001"
+      }
+    }
   }
 };
 
