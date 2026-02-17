@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from "react-router-dom";
+import { Spinner, Text, VStack } from "@chakra-ui/react";
 import AppShell from "./components/layout/AppShell";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import CatalogPage from "./pages/CatalogPage";
@@ -12,6 +13,15 @@ import OrdersPage from "./pages/OrdersPage";
 import PendingAccountPage from "./pages/PendingAccountPage";
 import SettingsPage from "./pages/SettingsPage";
 import SignupPage from "./pages/SignupPage";
+
+function FullPageSpinner() {
+  return (
+    <VStack minH="100vh" justify="center" gap="4">
+      <Spinner size="xl" color="blue.500" borderWidth="3px" />
+      <Text color="gray.500" fontSize="sm">Loading...</Text>
+    </VStack>
+  );
+}
 
 function FullPageStatus({ title, description }) {
   return (
@@ -36,7 +46,7 @@ function ProtectedRoute({ children, pendingOnly = false }) {
   const { isAuthenticated, isLoading, authError, isPendingApproval, hasPartnerRecord } = useAuth();
 
   if (isLoading) {
-    return <FullPageStatus title="Loading..." description="Checking your session." />;
+    return <FullPageSpinner />;
   }
 
   if (authError) {
@@ -75,7 +85,7 @@ function PublicRoute({ children }) {
   const { isAuthenticated, isLoading, authError, isPendingApproval, hasPartnerRecord } = useAuth();
 
   if (isLoading) {
-    return <FullPageStatus title="Loading..." description="Checking your session." />;
+    return <FullPageSpinner />;
   }
 
   if (authError) {
@@ -99,7 +109,7 @@ function FallbackRoute() {
   const { isAuthenticated, isLoading, authError, isPendingApproval, hasPartnerRecord } = useAuth();
 
   if (isLoading) {
-    return <FullPageStatus title="Loading..." description="Checking your session." />;
+    return <FullPageSpinner />;
   }
 
   if (authError) {

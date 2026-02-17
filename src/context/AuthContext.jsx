@@ -22,7 +22,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [partner, setPartner] = useState(null);
   const [profile, setProfile] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [initializing, setInitializing] = useState(true);
   const [authError, setAuthError] = useState(null);
 
   // Fetch partner record for the authenticated user
@@ -111,7 +111,7 @@ export function AuthProvider({ children }) {
       } finally {
         if (!cancelled) {
           initialLoadDone = true;
-          setIsLoading(false);
+          setInitializing(false);
         }
       }
     };
@@ -132,16 +132,13 @@ export function AuthProvider({ children }) {
             // init() already handles bootstrapping for that case.
             if (!initialLoadDone) return;
 
-            setUser(nextUser);
-            setIsLoading(true);
-            await withTimeout(
-              bootstrapUser(nextUser),
-              AUTH_BOOTSTRAP_TIMEOUT_MS,
-              "Sign-in bootstrap"
-            );
-            if (!cancelled) {
-              setIsLoading(false);
-            }
+            // Bootstrap in background — signIn() already handles its own loading.
+            void bootstrapUser(nextUser).catch((err) => {
+              if (err?.name !== "AbortError") {
+                setAuthError(err);
+                console.error("Sign-in bootstrap error:", err);
+              }
+            });
           } else if (event === "TOKEN_REFRESHED" && nextUser) {
             // Keep UI responsive during token refresh; don't block routes with global loader.
             void bootstrapUser(nextUser).catch((err) => {
@@ -160,7 +157,6 @@ export function AuthProvider({ children }) {
             setAuthError(err);
             console.error("Auth state change error:", err);
           }
-          if (!cancelled) setIsLoading(false);
         }
       }
     );
@@ -236,39 +232,33 @@ export function AuthProvider({ children }) {
 
   // Sign in with email/password
   const signIn = async (email, password) => {
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-      if (error) throw error;
+    if (error) throw error;
 
-      setSession(data?.session || null);
+    setSession(data?.session || null);
 
-      if (data?.user) {
-        await withTimeout(
-          bootstrapUser(data.user),
-          AUTH_BOOTSTRAP_TIMEOUT_MS,
-          "Password sign-in bootstrap"
-        );
-      } else {
-        setUser(null);
-        setProfile(null);
-        setPartner(null);
-      }
-
-      setAuthError(null);
-      return data;
-    } finally {
-      setIsLoading(false);
+    if (data?.user) {
+      await withTimeout(
+        bootstrapUser(data.user),
+        AUTH_BOOTSTRAP_TIMEOUT_MS,
+        "Password sign-in bootstrap"
+      );
+    } else {
+      setUser(null);
+      setProfile(null);
+      setPartner(null);
     }
+
+    setAuthError(null);
+    return data;
   };
 
   // Sign out
   const signOut = async () => {
-    setIsLoading(true);
     try {
       const { error } = await supabase.auth.signOut();
       if (error) {
@@ -280,7 +270,6 @@ export function AuthProvider({ children }) {
       setPartner(null);
       setSession(null);
       setAuthError(null);
-      setIsLoading(false);
     }
   };
 
@@ -303,7 +292,7 @@ export function AuthProvider({ children }) {
     session,
     profile,
     partner,
-    isLoading,
+    isLoading: initializing,
     authError,
     isAuthenticated,
     isPendingApproval,
