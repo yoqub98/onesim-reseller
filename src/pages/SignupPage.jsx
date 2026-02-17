@@ -34,7 +34,7 @@ export default function SignupPage() {
   const [contractNumber, setContractNumber] = useState("");
 
   // OTP
-  const [otpCode, setOtpCode] = useState(["", "", "", "", "", ""]);
+  const [otpCode, setOtpCode] = useState(["", "", "", "", "", "", "", ""]);
   const otpRefs = useRef([]);
 
   // Store form data for partner record creation after OTP
@@ -75,13 +75,13 @@ export default function SignupPage() {
   const handleOtpChange = (index, value) => {
     if (value.length > 1) {
       // Handle paste
-      const digits = value.replace(/\D/g, "").slice(0, 6).split("");
+      const digits = value.replace(/\D/g, "").slice(0, 8).split("");
       const newOtp = [...otpCode];
       digits.forEach((digit, i) => {
-        if (index + i < 6) newOtp[index + i] = digit;
+        if (index + i < 8) newOtp[index + i] = digit;
       });
       setOtpCode(newOtp);
-      const nextIndex = Math.min(index + digits.length, 5);
+      const nextIndex = Math.min(index + digits.length, 7);
       otpRefs.current[nextIndex]?.focus();
       return;
     }
@@ -91,7 +91,7 @@ export default function SignupPage() {
     setOtpCode(newOtp);
 
     // Auto-focus next input
-    if (value && index < 5) {
+    if (value && index < 7) {
       otpRefs.current[index + 1]?.focus();
     }
   };
@@ -108,8 +108,8 @@ export default function SignupPage() {
     setIsLoading(true);
 
     const token = otpCode.join("");
-    if (token.length !== 6) {
-      setError("Please enter the 6-digit code");
+    if (token.length !== 8) {
+      setError("Please enter the 8-digit code");
       setIsLoading(false);
       return;
     }
@@ -169,12 +169,12 @@ export default function SignupPage() {
               ref={(el) => (otpRefs.current[index] = el)}
               type="text"
               inputMode="numeric"
-              maxLength={index === 0 ? 6 : 1}
+              maxLength={index === 0 ? 8 : 1}
               value={digit}
               onChange={(e) => handleOtpChange(index, e.target.value)}
               onKeyDown={(e) => handleOtpKeyDown(index, e)}
-              w="48px"
-              h="56px"
+              w="42px"
+              h="52px"
               textAlign="center"
               fontSize="22px"
               fontWeight="bold"
