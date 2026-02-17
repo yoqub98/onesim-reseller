@@ -1,10 +1,11 @@
 import { MagnifyingGlassIcon, PlusIcon } from "@heroicons/react/24/outline";
-import { Box, Heading, HStack, SimpleGrid, Text, VStack } from "@chakra-ui/react";
+import { Box, SimpleGrid, Text, VStack } from "@chakra-ui/react";
 import { useMemo, useState } from "react";
 import AppToastStack from "../components/common/AppToastStack";
+import PageHeader from "../components/layout/PageHeader";
 import { GroupCard, GroupDetailsModal, GroupFormModal } from "../components/groups";
 import { AppButton, AppInput, SurfaceCard } from "../components/ui";
-import { uiColors } from "../design-system/tokens";
+import { pageLayout, uiColors } from "../design-system/tokens";
 import { useAppToasts } from "../hooks/useAppToasts";
 import { useServiceData } from "../hooks/useServiceData";
 import { useLocale } from "../context/LocaleContext";
@@ -61,14 +62,7 @@ const groupsFallback = {
   }
 };
 
-// Layout rhythm rule for page consistency:
-// - Section vertical gap: 32-40px
-// - Grid gap: 24-32px
-// - Search block spacing follows same rhythm as other portal pages
-const groupsPageSpacing = {
-  section: { base: 8, md: 10 },
-  grid: { base: 6, xl: 8 }
-};
+const gridGap = { base: 6, xl: 8 };
 
 function GroupsPage() {
   const { dict } = useLocale();
@@ -133,15 +127,8 @@ function GroupsPage() {
     <Box position="relative" w="full">
       <AppToastStack items={toasts} />
 
-      <VStack align="stretch" spacing={groupsPageSpacing.section}>
-        <HStack justify="space-between" align={{ base: "start", md: "center" }} flexWrap="wrap" gap={3}>
-          <Box pb={1}>
-            <Heading color={uiColors.textPrimary} fontSize={{ base: "30px", md: "32px" }} fontWeight="800" lineHeight="1.2">
-              {t.title}
-            </Heading>
-            <Text color={uiColors.textSecondary} mt={2}>{t.subtitle}</Text>
-          </Box>
-
+      <VStack align="stretch" spacing={pageLayout.sectionGap}>
+        <PageHeader title={t.title} subtitle={t.subtitle}>
           <AppButton
             variant="primary"
             h="40px"
@@ -150,7 +137,7 @@ function GroupsPage() {
           >
             {t.actions.newGroup}
           </AppButton>
-        </HStack>
+        </PageHeader>
 
         <SurfaceCard p={{ base: 3, md: 4 }}>
           <AppInput
@@ -168,7 +155,7 @@ function GroupsPage() {
         ) : null}
 
         {isLoading ? (
-          <SimpleGrid columns={{ base: 1, xl: 2 }} spacing={groupsPageSpacing.grid}>
+          <SimpleGrid columns={{ base: 1, xl: 2 }} spacing={gridGap}>
             {Array.from({ length: 2 }).map((_, index) => (
               <SurfaceCard key={`group-skeleton-${index}`} p={5} minH="310px" bg={uiColors.surfaceSoft} />
             ))}
@@ -177,7 +164,7 @@ function GroupsPage() {
 
         {!isLoading && !loadError ? (
           groups.length ? (
-            <SimpleGrid columns={{ base: 1, xl: 2 }} spacing={groupsPageSpacing.grid}>
+            <SimpleGrid columns={{ base: 1, xl: 2 }} spacing={gridGap}>
               {groups.map((group) => (
                 <GroupCard
                   key={group.id}

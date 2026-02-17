@@ -11,7 +11,7 @@ import {
   PackageDetailsCard
 } from "../components/orders";
 import { AppButton, SurfaceCard } from "../components/ui";
-import { uiColors } from "../design-system/tokens";
+import { pageLayout, uiColors } from "../design-system/tokens";
 import { useCurrency } from "../context/CurrencyContext";
 import { useLocale } from "../context/LocaleContext";
 import { useAppToasts } from "../hooks/useAppToasts";
@@ -133,7 +133,7 @@ function OrderDetailsPage() {
   return (
     <Box position="relative" pb={28} w="full">
       <AppToastStack items={toasts} />
-      <VStack align="stretch" spacing={8}>
+      <VStack align="stretch" spacing={pageLayout.sectionGap}>
         <HStack justify="space-between" align={{ base: "start", md: "center" }} flexWrap="wrap" gap={3}>
           <AppButton variant="ghost" h="40px" px={0} startElement={<ArrowLeftIcon width={16} />} onClick={() => navigate("/orders")}>{detail.back}</AppButton>
           <AppButton

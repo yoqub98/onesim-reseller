@@ -14,7 +14,6 @@ import {
   Box,
   Button,
   Grid,
-  Heading,
   HStack,
   Skeleton,
   Text,
@@ -23,9 +22,11 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import CountryFlag from "../components/common/CountryFlag";
+import PageHeader from "../components/layout/PageHeader";
 import StepIndicator from "../components/order/StepIndicator";
 import { useCurrency } from "../context/CurrencyContext";
 import { useLocale } from "../context/LocaleContext";
+import { pageLayout } from "../design-system/tokens";
 import { DELIVERY_EMAIL, DELIVERY_MANUAL, DELIVERY_SMS } from "../constants/delivery";
 import { useFormFields } from "../hooks/useFormFields";
 import { useServiceData } from "../hooks/useServiceData";
@@ -202,11 +203,8 @@ function NewOrderPage() {
   };
 
   return (
-    <VStack align="stretch" spacing={8} w="full">
-      <Box>
-        <Heading size="lg">{orderT.title}</Heading>
-        <Text color="gray.600" mt={1}>{orderT.subtitle}</Text>
-      </Box>
+    <VStack align="stretch" spacing={pageLayout.sectionGap} w="full">
+      <PageHeader title={orderT.title} subtitle={orderT.subtitle} />
 
       <StepIndicator steps={steps} currentStep={step} />
 

@@ -13,9 +13,11 @@ import { BanknotesIcon, SignalIcon, ShoppingCartIcon } from "@heroicons/react/24
 import StatCard from "../components/dashboard/StatCard";
 import RecentOrdersTable from "../components/dashboard/RecentOrdersTable";
 import AppToastStack from "../components/common/AppToastStack";
+import PageHeader from "../components/layout/PageHeader";
 import { ORDER_STATUS_ACTIVE } from "../constants/statuses";
 import { useCurrency } from "../context/CurrencyContext";
 import { useLocale } from "../context/LocaleContext";
+import { pageLayout } from "../design-system/tokens";
 import { useAppToasts } from "../hooks/useAppToasts";
 import { useServiceData } from "../hooks/useServiceData";
 import { ordersService } from "../services/ordersService";
@@ -83,12 +85,9 @@ function DashboardPage() {
   ]);
 
   return (
-    <VStack align="stretch" spacing={8} w="full">
+    <VStack align="stretch" spacing={pageLayout.sectionGap} w="full">
       <AppToastStack items={toasts} />
-      <Box>
-        <Heading size="lg">{dashboardT.title}</Heading>
-        <Text color="gray.600" mt={1}>{dashboardT.subtitle}</Text>
-      </Box>
+      <PageHeader title={dashboardT.title} subtitle={dashboardT.subtitle} />
 
       {error ? (
         <Box

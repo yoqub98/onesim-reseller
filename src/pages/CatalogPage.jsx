@@ -1,12 +1,13 @@
-import { Box, Flex, Heading, Text, VStack } from "@chakra-ui/react";
+import { VStack } from "@chakra-ui/react";
 import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CatalogFilters, OrderModal, PackageDetailsModal, PlanCardGrid } from "../components/catalog";
+import PageHeader from "../components/layout/PageHeader";
 import { useAuth } from "../context/AuthContext";
 import { useCurrency } from "../context/CurrencyContext";
 import { useLocale } from "../context/LocaleContext";
 import { DELIVERY_EMAIL, DELIVERY_OPERATOR, DELIVERY_SMS } from "../constants/delivery";
-import { uiColors } from "../design-system/tokens";
+import { pageLayout } from "../design-system/tokens";
 import { useFormFields } from "../hooks/useFormFields";
 import { useModal } from "../hooks/useModal";
 import { useServiceData } from "../hooks/useServiceData";
@@ -265,13 +266,8 @@ function CatalogPage() {
   }, [detailsModal, openBuyModal]);
 
   return (
-    <VStack align="stretch" spacing={8} w="full">
-      <Flex justify="space-between" align={{ base: "start", md: "center" }} gap={4} wrap="wrap">
-        <Box>
-          <Heading color={uiColors.textPrimary} fontSize={{ base: "2xl", md: "3xl" }} fontWeight="800">{t.title}</Heading>
-          <Text color={uiColors.textSecondary} mt={1}>{t.subtitle}</Text>
-        </Box>
-      </Flex>
+    <VStack align="stretch" spacing={pageLayout.sectionGap} w="full">
+      <PageHeader title={t.title} subtitle={t.subtitle} />
 
       <CatalogFilters
         t={t}

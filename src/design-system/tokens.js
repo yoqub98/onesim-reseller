@@ -27,3 +27,18 @@ export const uiRadii = {
 export const uiShadows = {
   soft: "0px 1px 3px rgba(15, 23, 43, 0.1), 0px 1px 2px rgba(15, 23, 43, 0.06)"
 };
+
+// Page layout rhythm — use these for consistent vertical spacing across all pages.
+// Reference: OrdersPage ("Buyurtmalar tarixi")
+export const pageLayout = {
+  // VStack gap between page sections (title block, filters, content)
+  sectionGap: { base: 8, md: 10 },
+  // Heading style for page titles
+  heading: {
+    fontSize: { base: "28px", md: "32px" },
+    fontWeight: "800",
+    lineHeight: "1.2",
+  },
+  // Gap between title and subtitle text
+  subtitleMt: 1,
+};

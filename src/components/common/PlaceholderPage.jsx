@@ -1,11 +1,15 @@
-import { Box, Heading, Text } from "@chakra-ui/react";
+import { Box, Text, VStack } from "@chakra-ui/react";
+import PageHeader from "../layout/PageHeader";
+import { pageLayout } from "../../design-system/tokens";
 
 function PlaceholderPage({ title, message }) {
   return (
-    <Box bg="white" borderRadius="xl" p={6} borderWidth="1px" borderColor="gray.200">
-      <Heading size="md" mb={2}>{title}</Heading>
-      <Text color="gray.600">{message}</Text>
-    </Box>
+    <VStack align="stretch" spacing={pageLayout.sectionGap} w="full">
+      <PageHeader title={title} />
+      <Box bg="white" borderRadius="xl" p={6} borderWidth="1px" borderColor="gray.200">
+        <Text color="gray.600">{message}</Text>
+      </Box>
+    </VStack>
   );
 }
 

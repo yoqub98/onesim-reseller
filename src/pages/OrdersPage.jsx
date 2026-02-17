@@ -1,11 +1,12 @@
-import { Box, Heading, VStack } from "@chakra-ui/react";
+import { Box, VStack } from "@chakra-ui/react";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import AppToastStack from "../components/common/AppToastStack";
+import PageHeader from "../components/layout/PageHeader";
 import { OrderActionModals, OrdersFilterBar, OrdersTable } from "../components/orders";
 import { useCurrency } from "../context/CurrencyContext";
 import { useLocale } from "../context/LocaleContext";
-import { uiColors } from "../design-system/tokens";
+import { pageLayout } from "../design-system/tokens";
 import { useAppToasts } from "../hooks/useAppToasts";
 import { useModal } from "../hooks/useModal";
 import { useServiceData } from "../hooks/useServiceData";
@@ -89,12 +90,8 @@ function OrdersPage() {
   return (
     <Box position="relative" w="full">
       <AppToastStack items={toasts} />
-      <VStack align="stretch" spacing={10}>
-        <Box pb="14px">
-          <Heading color={uiColors.textPrimary} fontSize={{ base: "30px", md: "32px" }} fontWeight="800" lineHeight="1.2">
-            {t.title}
-          </Heading>
-        </Box>
+      <VStack align="stretch" spacing={pageLayout.sectionGap}>
+        <PageHeader title={t.title} />
 
         <OrdersFilterBar
           t={t}
