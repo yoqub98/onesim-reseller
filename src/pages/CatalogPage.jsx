@@ -1,16 +1,17 @@
 import { Box, Flex, Heading, Text, VStack } from "@chakra-ui/react";
-import { useCallback, useMemo } from "react";
-import AppToastStack from "../components/common/AppToastStack";
-import { CatalogFilters, PackageDetailsModal, PlanCardGrid } from "../components/catalog";
+import { useCallback, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { CatalogFilters, OrderModal, PackageDetailsModal, PlanCardGrid } from "../components/catalog";
 import { useAuth } from "../context/AuthContext";
 import { useCurrency } from "../context/CurrencyContext";
 import { useLocale } from "../context/LocaleContext";
+import { DELIVERY_EMAIL, DELIVERY_OPERATOR, DELIVERY_SMS } from "../constants/delivery";
 import { uiColors } from "../design-system/tokens";
 import { useFormFields } from "../hooks/useFormFields";
-import { useAppToasts } from "../hooks/useAppToasts";
 import { useModal } from "../hooks/useModal";
 import { useServiceData } from "../hooks/useServiceData";
 import { catalogService } from "../services/catalogService";
+import { groupsService } from "../services/groupsService";
 import { formatMoneyFromUsd } from "../utils/currency";
 
 const EMPTY_LIST = [];
@@ -23,6 +24,23 @@ const dataFilterOptionsBase = [
   { value: "10to20", label: "10-20GB" },
   { value: "20plus", label: "20GB+" }
 ];
+
+let customerCounter = 0;
+
+function createCustomer() {
+  customerCounter += 1;
+  return {
+    id: `customer-${customerCounter}`,
+    fullName: "",
+    deliveryMethod: DELIVERY_SMS,
+    deliveryTime: "now",
+    phone: "+998",
+    email: "",
+    scheduleDate: "",
+    scheduleTime: "",
+    errors: {}
+  };
+}
 
 function matchesDataBucket(plan, bucket) {
   if (bucket === "all") return true;
@@ -38,24 +56,34 @@ function matchesDataBucket(plan, bucket) {
 }
 
 function CatalogPage() {
+  const navigate = useNavigate();
   const { partner } = useAuth();
   const { currency } = useCurrency();
   const { dict } = useLocale();
-  const { toasts, pushToast } = useAppToasts();
   const t = dict.catalog;
 
   const detailsModal = useModal();
+  const buyModal = useModal();
+  const [activeOrderTab, setActiveOrderTab] = useState("customer");
+  const [customers, setCustomers] = useState([createCustomer()]);
+  const [selectedGroups, setSelectedGroups] = useState([]);
+  const [isGroupPickerOpen, setIsGroupPickerOpen] = useState(false);
+  const [groupCandidateId, setGroupCandidateId] = useState("");
 
   const requestParams = useMemo(() => ({ partner }), [partner]);
 
   const loadCatalogPageData = useCallback(async ({ partner: partnerProfile } = {}) => {
-    const plans = await catalogService.getPlans({ partner: partnerProfile });
-    return { plans };
+    const [plans, groups] = await Promise.all([
+      catalogService.getPlans({ partner: partnerProfile }),
+      groupsService.listGroups()
+    ]);
+    return { plans, groups };
   }, []);
 
   const { data: catalogData, loading: isLoading, error: loadError } = useServiceData(loadCatalogPageData, requestParams);
 
   const plans = catalogData?.plans || EMPTY_LIST;
+  const groups = catalogData?.groups || EMPTY_LIST;
   const error = loadError ? (loadError.message || "Katalogni yuklashda xatolik") : "";
 
   const { fields: filters, setField } = useFormFields({
@@ -153,18 +181,91 @@ function CatalogPage() {
     [currency]
   );
 
-  const handlePurchasePlaceholder = useCallback(() => {
-    pushToast({
-      type: "info",
-      title: "Purchase flow pending",
-      description: "Purchase mechanism will be implemented in the next milestone.",
-      duration: 3000
+  const resetOrderFlow = useCallback(() => {
+    setActiveOrderTab("customer");
+    setCustomers([createCustomer()]);
+    setSelectedGroups([]);
+    setIsGroupPickerOpen(false);
+    setGroupCandidateId("");
+  }, []);
+
+  const openBuyModal = useCallback((plan) => {
+    buyModal.open(plan);
+    resetOrderFlow();
+  }, [buyModal, resetOrderFlow]);
+
+  const closeBuyModal = useCallback(() => {
+    buyModal.close();
+    resetOrderFlow();
+  }, [buyModal, resetOrderFlow]);
+
+  const updateCustomer = useCallback((id, patch) => {
+    setCustomers((prev) => prev.map((customer) => {
+      if (customer.id !== id) {
+        return customer;
+      }
+      const clearedErrors = { ...customer.errors };
+      Object.keys(patch).forEach((key) => delete clearedErrors[key]);
+      return { ...customer, ...patch, errors: clearedErrors };
+    }));
+  }, []);
+
+  const validateCustomers = useCallback(() => {
+    let isValid = true;
+    const nextCustomers = customers.map((customer) => {
+      const errors = {};
+      if (!customer.fullName.trim()) errors.fullName = "Ism Familiya majburiy";
+      if (customer.deliveryMethod === DELIVERY_SMS) {
+        const phone = customer.phone.replace(/\s+/g, "");
+        if (!phone || phone === "+998" || phone.length < 7) errors.phone = "Telefon raqam majburiy";
+      }
+      if (customer.deliveryMethod === DELIVERY_EMAIL && !customer.email.trim()) errors.email = "Email manzil majburiy";
+      if (customer.deliveryMethod !== DELIVERY_OPERATOR && customer.deliveryTime === "scheduled") {
+        if (!customer.scheduleDate) errors.scheduleDate = "Sana majburiy";
+        if (!customer.scheduleTime) errors.scheduleTime = "Vaqt majburiy";
+      }
+      if (Object.keys(errors).length > 0) isValid = false;
+      return { ...customer, errors };
     });
-  }, [pushToast]);
+
+    setCustomers(nextCustomers);
+    return isValid;
+  }, [customers]);
+
+  const onConfirmBuy = useCallback(() => {
+    if (!buyModal.data) return;
+    if (activeOrderTab === "customer" && !validateCustomers()) return;
+    if (activeOrderTab === "group" && selectedGroups.length === 0) {
+      setIsGroupPickerOpen(true);
+      return;
+    }
+
+    navigate("/new-order", {
+      state: {
+        preselectedPlanId: buyModal.data.id,
+        orderMode: activeOrderTab === "group" ? "group" : activeOrderTab === "self" ? "self" : "customer",
+        customers,
+        selectedGroups,
+        deliveryMethod: activeOrderTab === "group" ? (selectedGroups[0]?.deliveryMethod || DELIVERY_SMS) : undefined,
+        deliveryTime: activeOrderTab === "group" ? (selectedGroups[0]?.deliveryTime || "now") : undefined
+      }
+    });
+  }, [
+    activeOrderTab,
+    buyModal.data,
+    customers,
+    navigate,
+    selectedGroups,
+    validateCustomers
+  ]);
+
+  const handleDetailsPurchase = useCallback((plan) => {
+    detailsModal.close();
+    openBuyModal(plan);
+  }, [detailsModal, openBuyModal]);
 
   return (
     <VStack align="stretch" spacing={8} w="full">
-      <AppToastStack items={toasts} />
       <Flex justify="space-between" align={{ base: "start", md: "center" }} gap={4} wrap="wrap">
         <Box>
           <Heading color={uiColors.textPrimary} fontSize={{ base: "2xl", md: "3xl" }} fontWeight="800">{t.title}</Heading>
@@ -192,7 +293,7 @@ function CatalogPage() {
         error={error}
         plans={filteredPlans}
         onOpenDetails={detailsModal.open}
-        onBuy={handlePurchasePlaceholder}
+        onBuy={openBuyModal}
         renderOriginalPrice={renderOriginalPrice}
         renderResellerPrice={renderResellerPrice}
       />
@@ -202,9 +303,40 @@ function CatalogPage() {
         currency={currency}
         plan={detailsModal.data}
         onClose={detailsModal.close}
-        onPurchase={handlePurchasePlaceholder}
+        onPurchase={handleDetailsPurchase}
         renderOriginalPrice={renderOriginalPrice}
         renderResellerPrice={renderResellerPrice}
+      />
+
+      <OrderModal
+        t={t}
+        currency={currency}
+        buyPlan={buyModal.data}
+        activeOrderTab={activeOrderTab}
+        customers={customers}
+        groups={groups}
+        selectedGroups={selectedGroups}
+        isGroupPickerOpen={isGroupPickerOpen}
+        groupCandidateId={groupCandidateId}
+        operatorHelperText={t.modal.helperOperator}
+        selfOrderHelperText={t.modal.helperSelf}
+        onClose={closeBuyModal}
+        onTabChange={setActiveOrderTab}
+        onCustomerAdd={() => setCustomers((prev) => [...prev, createCustomer()])}
+        onCustomerRemove={(id) => setCustomers((prev) => (prev.length <= 1 ? prev : prev.filter((customer) => customer.id !== id)))}
+        onCustomerUpdate={updateCustomer}
+        onGroupPickerToggle={() => setIsGroupPickerOpen((prev) => !prev)}
+        onGroupCandidateChange={setGroupCandidateId}
+        onGroupAdd={() => {
+          if (!groupCandidateId) return;
+          const group = groups.find((item) => item.id === groupCandidateId);
+          if (!group) return;
+          setSelectedGroups((prev) => [...prev, group]);
+          setGroupCandidateId("");
+          setIsGroupPickerOpen(false);
+        }}
+        onGroupRemove={(groupId) => setSelectedGroups((prev) => prev.filter((group) => group.id !== groupId))}
+        onConfirm={onConfirmBuy}
       />
     </VStack>
   );
