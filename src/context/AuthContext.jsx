@@ -2,6 +2,20 @@ import { createContext, useContext, useEffect, useState, useCallback } from "rea
 import { supabase } from "../lib/supabase";
 
 const AuthContext = createContext(null);
+const AUTH_BOOTSTRAP_TIMEOUT_MS = 12000;
+
+function withTimeout(promise, ms, label) {
+  let timeoutId;
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(new Error(`${label} timed out after ${ms}ms`));
+    }, ms);
+  });
+
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    clearTimeout(timeoutId);
+  });
+}
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
@@ -71,6 +85,7 @@ export function AuthProvider({ children }) {
   // Initialize session on mount
   useEffect(() => {
     let cancelled = false;
+    let initialLoadDone = false;
 
     const init = async () => {
       try {
@@ -80,7 +95,11 @@ export function AuthProvider({ children }) {
         setSession(currentSession);
 
         if (currentSession?.user) {
-          await bootstrapUser(currentSession.user);
+          await withTimeout(
+            bootstrapUser(currentSession.user),
+            AUTH_BOOTSTRAP_TIMEOUT_MS,
+            "Initial auth bootstrap"
+          );
         }
       } catch (err) {
         if (err?.name === "AbortError") {
@@ -90,7 +109,10 @@ export function AuthProvider({ children }) {
         setAuthError(err);
         console.error("Auth init error:", err);
       } finally {
-        if (!cancelled) setIsLoading(false);
+        if (!cancelled) {
+          initialLoadDone = true;
+          setIsLoading(false);
+        }
       }
     };
 
@@ -103,13 +125,31 @@ export function AuthProvider({ children }) {
           if (cancelled) return;
           const nextUser = newSession?.user || null;
           setSession(newSession);
-          setUser(nextUser);
           setAuthError(null);
 
-          if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && nextUser) {
+          if (event === "SIGNED_IN" && nextUser) {
+            // Skip if this is the initial session event on page load —
+            // init() already handles bootstrapping for that case.
+            if (!initialLoadDone) return;
+
+            setUser(nextUser);
             setIsLoading(true);
-            await bootstrapUser(nextUser);
-            if (!cancelled) setIsLoading(false);
+            await withTimeout(
+              bootstrapUser(nextUser),
+              AUTH_BOOTSTRAP_TIMEOUT_MS,
+              "Sign-in bootstrap"
+            );
+            if (!cancelled) {
+              setIsLoading(false);
+            }
+          } else if (event === "TOKEN_REFRESHED" && nextUser) {
+            // Keep UI responsive during token refresh; don't block routes with global loader.
+            void bootstrapUser(nextUser).catch((err) => {
+              if (err?.name !== "AbortError") {
+                setAuthError(err);
+                console.error("Token refresh bootstrap error:", err);
+              }
+            });
           } else if (event === "SIGNED_OUT") {
             setUser(null);
             setProfile(null);
@@ -208,7 +248,11 @@ export function AuthProvider({ children }) {
       setSession(data?.session || null);
 
       if (data?.user) {
-        await bootstrapUser(data.user);
+        await withTimeout(
+          bootstrapUser(data.user),
+          AUTH_BOOTSTRAP_TIMEOUT_MS,
+          "Password sign-in bootstrap"
+        );
       } else {
         setUser(null);
         setProfile(null);
