@@ -101,14 +101,15 @@ export function AuthProvider({ children }) {
       async (event, newSession) => {
         try {
           if (cancelled) return;
+          const nextUser = newSession?.user || null;
           setSession(newSession);
-          setUser(newSession?.user || null);
+          setUser(nextUser);
           setAuthError(null);
 
-          if (event === "SIGNED_IN" && newSession?.user) {
-            await bootstrapUser(newSession.user);
-          } else if (event === "TOKEN_REFRESHED" && newSession?.user) {
-            await bootstrapUser(newSession.user);
+          if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && nextUser) {
+            setIsLoading(true);
+            await bootstrapUser(nextUser);
+            if (!cancelled) setIsLoading(false);
           } else if (event === "SIGNED_OUT") {
             setUser(null);
             setProfile(null);
@@ -119,6 +120,7 @@ export function AuthProvider({ children }) {
             setAuthError(err);
             console.error("Auth state change error:", err);
           }
+          if (!cancelled) setIsLoading(false);
         }
       }
     );
@@ -194,18 +196,35 @@ export function AuthProvider({ children }) {
 
   // Sign in with email/password
   const signIn = async (email, password) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (error) throw error;
-    setAuthError(null);
-    return data;
+      if (error) throw error;
+
+      setSession(data?.session || null);
+
+      if (data?.user) {
+        await bootstrapUser(data.user);
+      } else {
+        setUser(null);
+        setProfile(null);
+        setPartner(null);
+      }
+
+      setAuthError(null);
+      return data;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Sign out
   const signOut = async () => {
+    setIsLoading(true);
     try {
       const { error } = await supabase.auth.signOut();
       if (error) {
@@ -217,6 +236,7 @@ export function AuthProvider({ children }) {
       setPartner(null);
       setSession(null);
       setAuthError(null);
+      setIsLoading(false);
     }
   };
 
