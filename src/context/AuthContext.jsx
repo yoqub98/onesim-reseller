@@ -103,37 +103,47 @@ export function AuthProvider({ children }) {
     return data;
   };
 
-  // Verify OTP (email confirmation)
-  const verifyOtp = async (email, token) => {
-    const { data, error } = await supabase.auth.verifyOtp({
+  // Verify OTP and create partner record atomically
+  // Combines both steps to avoid race condition where user state
+  // isn't set yet when createPartnerRecord runs
+  const verifyOtpAndCreatePartner = async (email, token, partnerFormData) => {
+    // 1. Verify OTP — creates the session
+    const { data: otpData, error: otpError } = await supabase.auth.verifyOtp({
       email,
       token,
       type: "signup",
     });
+    if (otpError) throw otpError;
 
-    if (error) throw error;
-    return data;
-  };
+    const authUser = otpData.user;
+    if (!authUser) throw new Error("Verification succeeded but no user returned");
 
-  // Create partner record after OTP verification
-  const createPartnerRecord = async (partnerData) => {
+    // 2. Update local state immediately
+    setUser(authUser);
+    setSession(otpData.session);
+
+    // 3. Create partner record using authUser.id directly (not from state)
     const { data, error } = await supabase
       .from("partners")
       .insert({
-        user_id: user.id,
-        company_name: partnerData.companyName,
-        legal_name: partnerData.legalName || null,
-        tax_id: partnerData.inn || null,
-        address: partnerData.address ? { raw: partnerData.address } : null,
-        business_email: partnerData.businessEmail || user.email,
-        business_phone: partnerData.contactPhone || null,
+        user_id: authUser.id,
+        company_name: partnerFormData.companyName,
+        legal_name: partnerFormData.legalName || null,
+        tax_id: partnerFormData.inn || null,
+        address: partnerFormData.address ? { raw: partnerFormData.address } : null,
+        business_email: partnerFormData.businessEmail || authUser.email,
+        business_phone: partnerFormData.contactPhone || null,
         status: "pending_approval",
       })
       .select()
       .single();
-
     if (error) throw error;
+
     setPartner(data);
+
+    // 4. Fetch profile too
+    await fetchProfile(authUser.id);
+
     return data;
   };
 
@@ -185,8 +195,7 @@ export function AuthProvider({ children }) {
 
     // Actions
     signUp,
-    verifyOtp,
-    createPartnerRecord,
+    verifyOtpAndCreatePartner,
     signIn,
     signOut,
     refreshPartner,

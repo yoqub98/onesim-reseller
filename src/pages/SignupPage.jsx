@@ -11,7 +11,7 @@ import { uiColors, uiRadii } from "../design-system/tokens";
 
 export default function SignupPage() {
   const navigate = useNavigate();
-  const { signUp, verifyOtp, createPartnerRecord } = useAuth();
+  const { signUp, verifyOtpAndCreatePartner } = useAuth();
   const { dict: t } = useLocale();
 
   // Steps: 'form' | 'otp' | 'creating'
@@ -115,12 +115,9 @@ export default function SignupPage() {
     }
 
     try {
-      // Verify OTP - this creates the session
-      await verifyOtp(email, token);
-
-      // Now create the partner record
       setStep("creating");
-      await createPartnerRecord(formDataRef.current);
+      // Verify OTP + create partner record in one atomic flow
+      await verifyOtpAndCreatePartner(email, token, formDataRef.current);
 
       navigate("/pending-account");
     } catch (err) {

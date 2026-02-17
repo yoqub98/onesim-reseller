@@ -397,6 +397,7 @@ const uz = {
       contactPhone: "Telefon raqam",
       contractNumber: "Shartnoma raqami",
       contractHelper: "Ixtiyoriy, tekshiruvdan keyin beriladi",
+      credentials: "Hisob ma'lumotlari",
       placeholders: {
         email: "name@company.com",
         password: "••••••••",
@@ -408,7 +409,42 @@ const uz = {
         contactPhone: "+998 90 123 45 67",
         contractNumber: "№SHART-2024-001"
       }
-    }
+    },
+    otp: {
+      title: "Email tasdiqlash",
+      description: "Tasdiqlash kodi yuborildi:",
+      verify: "Tasdiqlash",
+      verifying: "Tasdiqlanmoqda...",
+      creating: "Hisob yaratilmoqda...",
+      noCode: "Kod kelmadimi?",
+      resend: "Qayta yuborish",
+      resent: "Yangi kod yuborildi!",
+    },
+    errors: {
+      required: "Email va parolni kiriting",
+      invalidCredentials: "Email yoki parol noto'g'ri",
+      emailNotConfirmed: "Email tasdiqlanmagan. Iltimos, emailingizni tekshiring.",
+    },
+  },
+  pending: {
+    title: "Boshqaruv paneli",
+    description: "Platformadan to'liq foydalanish uchun sizning biznes profilingiz adminlar tomonidan tasdiqlanishi kerak. Adminlarga sizning ro'yxatdan o'tganingiz haqida xabar yuborildi va tez orada profilingizni ko'rib chiqishadi. Tushunganingiz uchun rahmat.",
+    supportText: "Muammolar bo'lsa, qo'llab-quvvatlash xizmatimizga murojaat qiling:",
+    supportPhone: "+998 93 514 98 08",
+    cardTitle: "Kompaniya ro'yxatdan o'tish ma'lumotlari",
+    badge: "Tasdiqlash kutilmoqda",
+    fields: {
+      dateRegistered: "Ro'yxatdan o'tgan sana",
+      companyName: "Kompaniya nomi",
+      legalName: "Yuridik nomi",
+      inn: "INN (Soliq raqami)",
+      address: "Manzil",
+      businessEmail: "Biznes email",
+      contactPerson: "Kontakt shaxs",
+      contactPhone: "Telefon",
+      accountEmail: "Hisob email",
+    },
+    logout: "Chiqish",
   }
 };
 

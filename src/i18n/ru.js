@@ -216,6 +216,7 @@ const ru = {
       contactPhone: "Телефон",
       contractNumber: "Договор-номер",
       contractHelper: "Опционально, будет присвоен после проверки",
+      credentials: "Данные учётной записи",
       placeholders: {
         email: "name@company.com",
         password: "••••••••",
@@ -227,7 +228,42 @@ const ru = {
         contactPhone: "+998 90 123 45 67",
         contractNumber: "№ДОГ-2024-001"
       }
-    }
+    },
+    otp: {
+      title: "Подтверждение Email",
+      description: "Код подтверждения отправлен на:",
+      verify: "Подтвердить",
+      verifying: "Подтверждение...",
+      creating: "Создание аккаунта...",
+      noCode: "Не получили код?",
+      resend: "Отправить повторно",
+      resent: "Новый код отправлен!",
+    },
+    errors: {
+      required: "Введите email и пароль",
+      invalidCredentials: "Неверный email или пароль",
+      emailNotConfirmed: "Email не подтвержден. Пожалуйста, проверьте почту.",
+    },
+  },
+  pending: {
+    title: "Панель управления",
+    description: "Для полного доступа к платформе ваш бизнес-профиль должен быть одобрен администраторами. Администраторы уведомлены о вашей регистрации и в ближайшее время рассмотрят ваш профиль. Благодарим за понимание.",
+    supportText: "По любым вопросам обращайтесь в службу поддержки:",
+    supportPhone: "+998 93 514 98 08",
+    cardTitle: "Данные регистрации компании",
+    badge: "Ожидает одобрения",
+    fields: {
+      dateRegistered: "Дата регистрации",
+      companyName: "Название компании",
+      legalName: "Юридическое наименование",
+      inn: "ИНН",
+      address: "Адрес",
+      businessEmail: "Бизнес email",
+      contactPerson: "Контактное лицо",
+      contactPhone: "Телефон",
+      accountEmail: "Email аккаунта",
+    },
+    logout: "Выйти",
   }
 };
 
