@@ -1,160 +1,173 @@
 import { Squares2X2Icon, TableCellsIcon } from "@heroicons/react/24/outline";
 import { Box, Flex, Heading, HStack, Text, VStack } from "@chakra-ui/react";
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { CatalogFilters, OrderModal, PlanCardGrid } from "../components/catalog";
+import { useCallback, useMemo, useState } from "react";
+import AppToastStack from "../components/common/AppToastStack";
+import { CatalogFilters, PackageDetailsModal, PlanCardGrid } from "../components/catalog";
 import { SegmentedControl } from "../components/ui";
+import { useAuth } from "../context/AuthContext";
 import { useCurrency } from "../context/CurrencyContext";
 import { useLocale } from "../context/LocaleContext";
 import { uiColors } from "../design-system/tokens";
-import { DELIVERY_EMAIL, DELIVERY_OPERATOR, DELIVERY_SMS } from "../constants/delivery";
 import { useFormFields } from "../hooks/useFormFields";
+import { useAppToasts } from "../hooks/useAppToasts";
 import { useModal } from "../hooks/useModal";
 import { useServiceData } from "../hooks/useServiceData";
 import { catalogService } from "../services/catalogService";
-import { groupsService } from "../services/groupsService";
-import { formatMoneyFromUzs } from "../utils/currency";
-import { formatPackageDataLabel } from "../utils/package";
+import { formatMoneyFromUsd } from "../utils/currency";
 
-// CatalogPage — orchestrates:
-//   CatalogFilters, PlanCardGrid, OrderModal
-// Data: catalogService.getPlans(), groupsService.listGroups()
-
-const dataFilterValues = ["all", "5GB", "10GB", "20GB", "Cheksiz"];
-const dayFilterValues = ["all", "7", "15", "30", "90"];
 const EMPTY_LIST = [];
 
-let customerCounter = 0;
+const dataFilterOptionsBase = [
+  { value: "all", label: "all" },
+  { value: "upTo1", label: "<=1GB" },
+  { value: "1to5", label: "1-5GB" },
+  { value: "5to10", label: "5-10GB" },
+  { value: "10to20", label: "10-20GB" },
+  { value: "20plus", label: "20GB+" }
+];
 
-function createCustomer() {
-  customerCounter += 1;
-  return {
-    id: `customer-${customerCounter}`,
-    fullName: "",
-    deliveryMethod: DELIVERY_SMS,
-    deliveryTime: "now",
-    phone: "+998",
-    email: "",
-    scheduleDate: "",
-    scheduleTime: "",
-    errors: {}
-  };
-}
+function matchesDataBucket(plan, bucket) {
+  if (bucket === "all") return true;
+  const dataGb = Number(plan?.dataGb || 0);
 
-async function loadCatalogPageData() {
-  const [plans, groups] = await Promise.all([catalogService.getPlans(), groupsService.listGroups()]);
-  return { plans, groups };
+  if (bucket === "upTo1") return dataGb <= 1;
+  if (bucket === "1to5") return dataGb > 1 && dataGb <= 5;
+  if (bucket === "5to10") return dataGb > 5 && dataGb <= 10;
+  if (bucket === "10to20") return dataGb > 10 && dataGb <= 20;
+  if (bucket === "20plus") return dataGb >= 20;
+
+  return true;
 }
 
 function CatalogPage() {
-  const navigate = useNavigate();
+  const { partner } = useAuth();
   const { currency } = useCurrency();
   const { dict } = useLocale();
+  const { toasts, pushToast } = useAppToasts();
   const t = dict.catalog;
 
-  const { data: catalogData, loading: isLoading, error: loadError } = useServiceData(loadCatalogPageData);
-  const plans = catalogData?.plans || EMPTY_LIST;
-  const groups = catalogData?.groups || EMPTY_LIST;
-  const error = loadError ? (loadError.message || "Katalogni yuklashda xatolik") : "";
   const [view, setView] = useState("table");
-  const { fields: filters, setField } = useFormFields({ destination: "all", data: "all", days: "all" });
-  const buyModal = useModal();
-  const [activeOrderTab, setActiveOrderTab] = useState("customer");
-  const [customers, setCustomers] = useState([createCustomer()]);
-  const [selectedGroups, setSelectedGroups] = useState([]);
-  const [isGroupPickerOpen, setIsGroupPickerOpen] = useState(false);
-  const [groupCandidateId, setGroupCandidateId] = useState("");
+  const detailsModal = useModal();
 
-  const destinationOptions = useMemo(() => ["all", ...new Set(plans.map((plan) => plan.destination))], [plans]);
-  const dataFilterOptions = useMemo(() => dataFilterValues.map((value) => ({
-    value,
-    label: value === "all" ? t.units.all : value === "Cheksiz" ? t.units.unlimited : value
-  })), [t.units.all, t.units.unlimited]);
-  const dayFilterOptions = useMemo(() => dayFilterValues.map((value) => ({
-    value,
-    label: value === "all" ? t.units.all : `${value} ${t.units.day}`
-  })), [t.units.all, t.units.day]);
-  const filteredPlans = useMemo(() => plans.filter((plan) => {
-    const dataLabel = formatPackageDataLabel(plan, t.units.unlimited);
-    const destinationMatch = filters.destination === "all" || plan.destination === filters.destination;
-    const dataMatch = filters.data === "all" || dataLabel === filters.data;
-    const dayMatch = filters.days === "all" || String(plan.validityDays) === filters.days;
-    return destinationMatch && dataMatch && dayMatch;
-  }), [filters, plans, t.units.unlimited]);
+  const requestParams = useMemo(() => ({ partner }), [partner]);
 
-  const resetOrderFlow = () => {
-    setActiveOrderTab("customer");
-    setCustomers([createCustomer()]);
-    setSelectedGroups([]);
-    setIsGroupPickerOpen(false);
-    setGroupCandidateId("");
-  };
+  const loadCatalogPageData = useCallback(async ({ partner: partnerProfile } = {}) => {
+    const plans = await catalogService.getPlans({ partner: partnerProfile });
+    return { plans };
+  }, []);
 
-  const openBuyModal = (plan) => {
-    buyModal.open(plan);
-    resetOrderFlow();
-  };
+  const { data: catalogData, loading: isLoading, error: loadError } = useServiceData(loadCatalogPageData, requestParams);
 
-  const closeBuyModal = () => {
-    buyModal.close();
-    resetOrderFlow();
-  };
+  const plans = catalogData?.plans || EMPTY_LIST;
+  const error = loadError ? (loadError.message || "Katalogni yuklashda xatolik") : "";
 
-  const updateCustomer = (id, patch) => {
-    setCustomers((prev) => prev.map((customer) => {
-      if (customer.id !== id) {
-        return customer;
-      }
-      const clearedErrors = { ...customer.errors };
-      Object.keys(patch).forEach((key) => delete clearedErrors[key]);
-      return { ...customer, ...patch, errors: clearedErrors };
-    }));
-  };
+  const { fields: filters, setField } = useFormFields({
+    search: "",
+    destination: "all",
+    locationType: "all",
+    packageType: "all",
+    data: "all",
+    days: "all"
+  });
 
-  const validateCustomers = () => {
-    let isValid = true;
-    const nextCustomers = customers.map((customer) => {
-      const errors = {};
-      if (!customer.fullName.trim()) errors.fullName = "Ism Familiya majburiy";
-      if (customer.deliveryMethod === DELIVERY_SMS) {
-        const phone = customer.phone.replace(/\s+/g, "");
-        if (!phone || phone === "+998" || phone.length < 7) errors.phone = "Telefon raqam majburiy";
-      }
-      if (customer.deliveryMethod === DELIVERY_EMAIL && !customer.email.trim()) errors.email = "Email manzil majburiy";
-      if (customer.deliveryMethod !== DELIVERY_OPERATOR && customer.deliveryTime === "scheduled") {
-        if (!customer.scheduleDate) errors.scheduleDate = "Sana majburiy";
-        if (!customer.scheduleTime) errors.scheduleTime = "Vaqt majburiy";
-      }
-      if (Object.keys(errors).length > 0) isValid = false;
-      return { ...customer, errors };
+  const destinationOptions = useMemo(
+    () => ["all", ...new Set(plans.map((plan) => plan.destination).filter(Boolean))],
+    [plans]
+  );
+
+  const locationTypeOptions = useMemo(
+    () => [
+      { value: "all", label: t.units.all },
+      { value: "country", label: "Country" },
+      { value: "regional", label: "Regional" },
+      { value: "global", label: "Global" }
+    ],
+    [t.units.all]
+  );
+
+  const packageTypeOptions = useMemo(
+    () => [
+      { value: "all", label: t.units.all },
+      { value: "standard", label: "Standard" },
+      { value: "daily", label: "Daily" }
+    ],
+    [t.units.all]
+  );
+
+  const dayFilterOptions = useMemo(() => {
+    const durations = [...new Set(plans.map((plan) => String(plan.validityDays)).filter(Boolean))]
+      .map((value) => Number(value))
+      .filter((value) => Number.isFinite(value) && value >= 0)
+      .sort((a, b) => a - b);
+
+    return [
+      { value: "all", label: t.units.all },
+      ...durations.map((value) => ({ value: String(value), label: `${value} ${t.units.day}` }))
+    ];
+  }, [plans, t.units.all, t.units.day]);
+
+  const dataFilterOptions = useMemo(
+    () =>
+      dataFilterOptionsBase.map((option) => ({
+        ...option,
+        label: option.value === "all" ? t.units.all : option.label
+      })),
+    [t.units.all]
+  );
+
+  const filteredPlans = useMemo(() => {
+    const search = filters.search.trim().toLowerCase();
+
+    return plans
+      .filter((plan) => {
+        const destinationMatch = filters.destination === "all" || plan.destination === filters.destination;
+        const locationTypeMatch = filters.locationType === "all" || plan.locationType === filters.locationType;
+        const packageTypeMatch =
+          filters.packageType === "all" ||
+          (filters.packageType === "daily" ? Number(plan.dataType) === 2 : Number(plan.dataType) !== 2);
+        const dataMatch = matchesDataBucket(plan, filters.data);
+        const dayMatch = filters.days === "all" || String(plan.validityDays) === filters.days;
+        const searchMatch =
+          !search ||
+          [plan.name, plan.destination, plan.countryCode, plan.packageCode, plan.slug]
+            .filter(Boolean)
+            .some((value) => String(value).toLowerCase().includes(search));
+
+        return destinationMatch && locationTypeMatch && packageTypeMatch && dataMatch && dayMatch && searchMatch;
+      })
+      .sort((a, b) => {
+        if (a.destination !== b.destination) {
+          return String(a.destination).localeCompare(String(b.destination));
+        }
+        if (a.validityDays !== b.validityDays) {
+          return Number(a.validityDays) - Number(b.validityDays);
+        }
+        return Number(a.dataGb) - Number(b.dataGb);
+      });
+  }, [filters, plans]);
+
+  const renderOriginalPrice = useCallback(
+    (plan) => formatMoneyFromUsd(plan.originalPriceUsd || 0, currency),
+    [currency]
+  );
+
+  const renderResellerPrice = useCallback(
+    (plan) => formatMoneyFromUsd(plan.resellerPriceUsd || 0, currency),
+    [currency]
+  );
+
+  const handlePurchasePlaceholder = useCallback(() => {
+    pushToast({
+      type: "info",
+      title: "Purchase flow pending",
+      description: "Purchase mechanism will be implemented in the next milestone.",
+      duration: 3000
     });
-
-    setCustomers(nextCustomers);
-    return isValid;
-  };
-
-  const onConfirmBuy = () => {
-    if (!buyModal.data) return;
-    if (activeOrderTab === "customer" && !validateCustomers()) return;
-    if (activeOrderTab === "group" && selectedGroups.length === 0) {
-      setIsGroupPickerOpen(true);
-      return;
-    }
-
-    navigate("/new-order", {
-      state: {
-        preselectedPlanId: buyModal.data.id,
-        orderMode: activeOrderTab === "group" ? "group" : activeOrderTab === "self" ? "self" : "customer",
-        customers,
-        selectedGroups,
-        deliveryMethod: activeOrderTab === "group" ? (selectedGroups[0]?.deliveryMethod || DELIVERY_SMS) : undefined,
-        deliveryTime: activeOrderTab === "group" ? (selectedGroups[0]?.deliveryTime || "now") : undefined
-      }
-    });
-  };
+  }, [pushToast]);
 
   return (
     <VStack align="stretch" spacing={8} w="full">
+      <AppToastStack items={toasts} />
       <Flex justify="space-between" align={{ base: "start", md: "center" }} gap={4} wrap="wrap">
         <Box>
           <Heading color={uiColors.textPrimary} fontSize={{ base: "2xl", md: "3xl" }} fontWeight="800">{t.title}</Heading>
@@ -173,6 +186,8 @@ function CatalogPage() {
         t={t}
         filters={filters}
         destinationOptions={destinationOptions}
+        locationTypeOptions={locationTypeOptions}
+        packageTypeOptions={packageTypeOptions}
         dataFilterOptions={dataFilterOptions}
         dayFilterOptions={dayFilterOptions}
         onChange={(patch) => {
@@ -187,40 +202,20 @@ function CatalogPage() {
         isLoading={isLoading}
         error={error}
         plans={filteredPlans}
-        onBuy={openBuyModal}
-        renderOriginalPrice={(plan) => formatMoneyFromUzs(plan.originalPriceUzs || 0, currency)}
-        renderResellerPrice={(plan) => formatMoneyFromUzs(plan.resellerPriceUzs || 0, currency)}
+        onOpenDetails={detailsModal.open}
+        onBuy={handlePurchasePlaceholder}
+        renderOriginalPrice={renderOriginalPrice}
+        renderResellerPrice={renderResellerPrice}
       />
 
-      <OrderModal
+      <PackageDetailsModal
         t={t}
         currency={currency}
-        buyPlan={buyModal.data}
-        activeOrderTab={activeOrderTab}
-        customers={customers}
-        groups={groups}
-        selectedGroups={selectedGroups}
-        isGroupPickerOpen={isGroupPickerOpen}
-        groupCandidateId={groupCandidateId}
-        operatorHelperText={t.modal.helperOperator}
-        selfOrderHelperText={t.modal.helperSelf}
-        onClose={closeBuyModal}
-        onTabChange={setActiveOrderTab}
-        onCustomerAdd={() => setCustomers((prev) => [...prev, createCustomer()])}
-        onCustomerRemove={(id) => setCustomers((prev) => (prev.length <= 1 ? prev : prev.filter((customer) => customer.id !== id)))}
-        onCustomerUpdate={updateCustomer}
-        onGroupPickerToggle={() => setIsGroupPickerOpen((prev) => !prev)}
-        onGroupCandidateChange={setGroupCandidateId}
-        onGroupAdd={() => {
-          if (!groupCandidateId) return;
-          const group = groups.find((item) => item.id === groupCandidateId);
-          if (!group) return;
-          setSelectedGroups((prev) => [...prev, group]);
-          setGroupCandidateId("");
-          setIsGroupPickerOpen(false);
-        }}
-        onGroupRemove={(groupId) => setSelectedGroups((prev) => prev.filter((group) => group.id !== groupId))}
-        onConfirm={onConfirmBuy}
+        plan={detailsModal.data}
+        onClose={detailsModal.close}
+        onPurchase={handlePurchasePlaceholder}
+        renderOriginalPrice={renderOriginalPrice}
+        renderResellerPrice={renderResellerPrice}
       />
     </VStack>
   );

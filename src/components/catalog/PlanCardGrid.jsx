@@ -1,5 +1,5 @@
-// Renders catalog plan rows/cards in table or card layout — used in CatalogPage
-import { HeartIcon, ShoppingBagIcon } from "@heroicons/react/24/outline";
+// Renders catalog plan rows/cards in table or card layout - used in CatalogPage
+import { EyeIcon, HeartIcon } from "@heroicons/react/24/outline";
 import { Badge, Box, Grid, HStack, Skeleton, Text, VStack } from "@chakra-ui/react";
 import CountryFlag from "../common/CountryFlag";
 import {
@@ -20,6 +20,7 @@ function PlanCardGrid({
   isLoading,
   error,
   plans,
+  onOpenDetails,
   onBuy,
   renderOriginalPrice,
   renderResellerPrice
@@ -61,7 +62,13 @@ function PlanCardGrid({
           headers={[t.table.package, t.table.price, t.table.validity, t.table.speed, t.table.actions]}
         >
           {plans.map((plan) => (
-            <AppDataTableRow key={plan.id} columns="2.2fr 1.4fr 1fr 1fr 1.6fr">
+            <AppDataTableRow
+              key={plan.id}
+              columns="2.2fr 1.4fr 1fr 1fr 1.6fr"
+              cursor="pointer"
+              _hover={{ bg: "#f8fafc" }}
+              onClick={() => onOpenDetails(plan)}
+            >
               <AppDataTableCell>
                 <PackageDisplay
                   countryCode={plan.countryCode}
@@ -73,10 +80,10 @@ function PlanCardGrid({
 
               <AppDataTableCell>
                 <Text color={uiColors.textMuted} textDecor="line-through" fontSize="xs" fontWeight="500">
-                  {renderOriginalPrice(plan)}
+                  {renderOriginalPrice(plan)} (+{plan.defaultMarginPercent || 0}%)
                 </Text>
                 <Text color={uiColors.textPrimary} fontSize="md" fontWeight="700">
-                  {renderResellerPrice(plan)}
+                  {renderResellerPrice(plan)} (-{plan.partnerDiscountRate || 0}%)
                 </Text>
               </AppDataTableCell>
 
@@ -101,12 +108,12 @@ function PlanCardGrid({
               </AppDataTableCell>
 
               <AppDataTableCell align="right">
-                <HStack justify="end" spacing={2}>
+                <HStack justify="end" spacing={2} onClick={(event) => event.stopPropagation()}>
                   <AppIconButton
                     aria-label="Batafsil"
-                    icon={<ShoppingBagIcon width={16} />}
+                    icon={<EyeIcon width={16} />}
                     variant="ghost"
-                    onClick={() => onBuy(plan)}
+                    onClick={() => onOpenDetails(plan)}
                   />
                   <AppIconButton aria-label="Sevimlilar" icon={<HeartIcon width={16} />} variant="ghost" />
                   <AppButton variant="outline" h="36px" px={5} onClick={() => onBuy(plan)}>
@@ -134,12 +141,16 @@ function PlanCardGrid({
                 </Badge>
               </HStack>
 
-              <Text mt={3} textDecor="line-through" color={uiColors.textMuted} fontSize="xs">{renderOriginalPrice(plan)}</Text>
-              <Text color={uiColors.textPrimary} fontWeight="700">{renderResellerPrice(plan)}</Text>
+              <Text mt={3} textDecor="line-through" color={uiColors.textMuted} fontSize="xs">
+                {renderOriginalPrice(plan)} (+{plan.defaultMarginPercent || 0}%)
+              </Text>
+              <Text color={uiColors.textPrimary} fontWeight="700">
+                {renderResellerPrice(plan)} (-{plan.partnerDiscountRate || 0}%)
+              </Text>
               <Text fontSize="sm" color={uiColors.textSecondary}>{plan.validityDays} {t.units.day}</Text>
 
               <HStack mt={3} spacing={2}>
-                <AppButton variant="ghost" onClick={() => onBuy(plan)}>
+                <AppButton variant="ghost" onClick={() => onOpenDetails(plan)}>
                   {t.details}
                 </AppButton>
                 <AppButton variant="outline" onClick={() => onBuy(plan)}>

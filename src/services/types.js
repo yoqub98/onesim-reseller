@@ -16,6 +16,17 @@
  * @property {string} coverage
  * @property {number} originalPriceUzs
  * @property {number} resellerPriceUzs
+ * @property {number} [originalPriceUsd]
+ * @property {number} [resellerPriceUsd]
+ * @property {number} [apiPriceUsd]
+ * @property {number} [defaultMarginPercent]
+ * @property {number} [partnerDiscountRate]
+ * @property {string} [locationType]
+ * @property {string} [packageCode]
+ * @property {string} [slug]
+ * @property {number} [dataType]
+ * @property {number} [smsStatus]
+ * @property {string} [description]
  * @property {string} sku
  */
 

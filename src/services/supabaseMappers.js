@@ -47,22 +47,46 @@ function dataBytesToGb(value) {
 
 export function mapPackageRowToPlan(row, options = {}) {
   const usdToUzsRate = asNumber(options.usdToUzsRate, DEFAULT_USD_TO_UZS);
-  const priceUsd = asNumber(row?.final_price_usd ?? row?.price_usd ?? row?.api_price_usd, 0);
-  const retailUsd = asNumber(row?.retail_price_override_usd, priceUsd);
+  const defaultMarginPercent = asNumber(row?.default_margin_percent, 0);
+  const apiPriceUsd = asNumber(row?.api_price_usd ?? row?.price_usd, 0);
+  const b2cPriceUsd = apiPriceUsd * (1 + defaultMarginPercent / 100);
+  const firstLocationName =
+    Array.isArray(row?.location_network_list) && row.location_network_list.length > 0
+      ? row.location_network_list[0]?.locationName
+      : "";
+  const partnerDiscountRate = asNumber(
+    options?.partner?.custom_discount_rate ?? options?.partner?.discount_rate,
+    0
+  );
+  const resellerPriceUsd = b2cPriceUsd * (1 - partnerDiscountRate / 100);
+  const retailUsd = asNumber(row?.retail_price_override_usd, b2cPriceUsd);
 
   return {
     id: row?.id || row?.package_code || "",
     name: row?.name || row?.package_name || "",
-    destination: row?.location_name || row?.location_code || "",
+    destination: firstLocationName || row?.location_name || row?.location_code || "",
     countryCode: row?.location_code || "",
     dataGb: asNumber(row?.data_gb, dataBytesToGb(row?.data_volume)),
     dataLabel: row?.data_gb ? `${asNumber(row.data_gb)}GB` : "",
     validityDays: asNumber(row?.duration, 0),
-    price: priceUsd,
+    price: resellerPriceUsd,
     speed: row?.speed || "",
     coverage: row?.speed || "",
     originalPriceUzs: Math.round(retailUsd * usdToUzsRate),
-    resellerPriceUzs: Math.round(priceUsd * usdToUzsRate),
+    resellerPriceUzs: Math.round(resellerPriceUsd * usdToUzsRate),
+    originalPriceUsd: retailUsd,
+    resellerPriceUsd,
+    apiPriceUsd,
+    defaultMarginPercent,
+    partnerDiscountRate,
+    locationType: row?.location_type || "",
+    packageCode: row?.package_code || "",
+    slug: row?.slug || "",
+    dataType: asNumber(row?.data_type, 0),
+    smsStatus: asNumber(row?.sms_status, 0),
+    description: row?.description || "",
+    coveredCountries: row?.covered_countries || [],
+    locationNetworkList: row?.location_network_list || [],
     sku: row?.slug || row?.package_code || ""
   };
 }
