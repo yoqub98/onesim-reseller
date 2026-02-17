@@ -13,11 +13,19 @@ export function AuthProvider({ children }) {
 
   // Fetch partner record for the authenticated user
   const fetchPartnerProfile = useCallback(async (userId) => {
-    const { data: partnerData } = await supabase
+    const { data: partnerData, error } = await supabase
       .from("partners")
       .select("*")
       .eq("user_id", userId)
-      .single();
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Partner fetch error:", error);
+      setPartner(null);
+      return null;
+    }
 
     setPartner(partnerData || null);
     return partnerData;
@@ -25,11 +33,17 @@ export function AuthProvider({ children }) {
 
   // Fetch profile record
   const fetchProfile = useCallback(async (userId) => {
-    const { data: profileData } = await supabase
+    const { data: profileData, error } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", userId)
-      .single();
+      .maybeSingle();
+
+    if (error) {
+      console.error("Profile fetch error:", error);
+      setProfile(null);
+      return null;
+    }
 
     setProfile(profileData || null);
     return profileData;
@@ -49,6 +63,7 @@ export function AuthProvider({ children }) {
       fetchProfile(authUser.id),
       fetchPartnerProfile(authUser.id),
     ]);
+    setAuthError(null);
 
     return { profile: profileData, partner: partnerData };
   }, [fetchProfile, fetchPartnerProfile]);
@@ -87,8 +102,12 @@ export function AuthProvider({ children }) {
         try {
           if (cancelled) return;
           setSession(newSession);
+          setUser(newSession?.user || null);
+          setAuthError(null);
 
           if (event === "SIGNED_IN" && newSession?.user) {
+            await bootstrapUser(newSession.user);
+          } else if (event === "TOKEN_REFRESHED" && newSession?.user) {
             await bootstrapUser(newSession.user);
           } else if (event === "SIGNED_OUT") {
             setUser(null);
@@ -181,17 +200,24 @@ export function AuthProvider({ children }) {
     });
 
     if (error) throw error;
+    setAuthError(null);
     return data;
   };
 
   // Sign out
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
-    setUser(null);
-    setProfile(null);
-    setPartner(null);
-    setSession(null);
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error("Sign out error:", error);
+      }
+    } finally {
+      setUser(null);
+      setProfile(null);
+      setPartner(null);
+      setSession(null);
+      setAuthError(null);
+    }
   };
 
   // Refresh partner data (useful after admin approval)
