@@ -14,24 +14,34 @@ import SettingsPage from "./pages/SettingsPage";
 import SignupPage from "./pages/SignupPage";
 
 /**
- * ProtectedRoute - Redirects to login if user is not authenticated
+ * ProtectedRoute - Redirects based on auth & partner status
+ *
+ * States:
+ * 1. Not authenticated -> /login
+ * 2. Authenticated but no partner record or pending_approval -> /pending-account
+ * 3. Authenticated + active partner -> full access
  */
 function ProtectedRoute({ children, pendingOnly = false }) {
-  const { isAuthenticated, isLoading, isPendingApproval } = useAuth();
+  const { isAuthenticated, isLoading, isPendingApproval, hasPartnerRecord } = useAuth();
 
   if (isLoading) {
-    return null; // Or a loading spinner
+    return null;
   }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
-  if (pendingOnly && !isPendingApproval) {
+  // User is authenticated but partner is not yet approved
+  const needsApproval = !hasPartnerRecord || isPendingApproval;
+
+  if (pendingOnly && !needsApproval) {
+    // Already approved, redirect away from pending page
     return <Navigate to="/" replace />;
   }
 
-  if (!pendingOnly && isPendingApproval) {
+  if (!pendingOnly && needsApproval) {
+    // Not approved yet, redirect to pending page
     return <Navigate to="/pending-account" replace />;
   }
 
@@ -42,21 +52,22 @@ function ProtectedRoute({ children, pendingOnly = false }) {
  * PublicRoute - Redirects to dashboard if user is already authenticated
  */
 function PublicRoute({ children }) {
-  const { isAuthenticated, isLoading, isPendingApproval } = useAuth();
+  const { isAuthenticated, isLoading, isPendingApproval, hasPartnerRecord } = useAuth();
 
   if (isLoading) {
     return null;
   }
 
   if (isAuthenticated) {
-    return <Navigate to={isPendingApproval ? "/pending-account" : "/"} replace />;
+    const needsApproval = !hasPartnerRecord || isPendingApproval;
+    return <Navigate to={needsApproval ? "/pending-account" : "/"} replace />;
   }
 
   return children;
 }
 
 function FallbackRoute() {
-  const { isAuthenticated, isLoading, isPendingApproval } = useAuth();
+  const { isAuthenticated, isLoading, isPendingApproval, hasPartnerRecord } = useAuth();
 
   if (isLoading) {
     return null;
@@ -66,7 +77,8 @@ function FallbackRoute() {
     return <Navigate to="/login" replace />;
   }
 
-  return <Navigate to={isPendingApproval ? "/pending-account" : "/"} replace />;
+  const needsApproval = !hasPartnerRecord || isPendingApproval;
+  return <Navigate to={needsApproval ? "/pending-account" : "/"} replace />;
 }
 
 function AppRoutes() {

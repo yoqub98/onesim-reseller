@@ -1,11 +1,16 @@
 {
   "permissions": {
     "allow": [
-      "mcp__claude_ai_Figma__get_metadata",
-      "mcp__claude_ai_Figma__get_design_context",
-      "mcp__claude_ai_Supabase__list_projects",
-      "mcp__claude_ai_Supabase__list_tables",
-      "Bash(claude mcp add:*)"
+      "Bash(*)",
+      "Edit(*)",
+      "Write(*)",
+      "Read(*)",
+      "Glob(*)",
+      "Grep(*)",
+      "mcp__claude_ai_Supabase__*",
+      "mcp__claude_ai_Figma__*",
+      "mcp__claude_ai_ClickUp__*",
+      "mcp__claude_ai_Kiwi_com__*"
     ]
   }
 }

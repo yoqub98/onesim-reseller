@@ -9,7 +9,7 @@ import { SIDEBAR_NAV_ITEMS } from "../../constants/navigation";
 import { uiColors, uiRadii } from "../../design-system/tokens";
 
 function SidebarNav({ onNavigate, disabled = false }) {
-  const { user } = useAuth();
+  const { partner } = useAuth();
 
   return (
     <Flex direction="column" h="full" opacity={disabled ? 0.65 : 1}>
@@ -36,10 +36,10 @@ function SidebarNav({ onNavigate, disabled = false }) {
             </Box>
             <Box minW={0}>
               <Text color="white" fontWeight="700" fontSize="sm" noOfLines={1}>
-                {user?.company_name || "Grand Travel Tour"}
+                {partner?.company_name || "Grand Travel Tour"}
               </Text>
               <Text color={uiColors.textMuted} fontSize="xs" noOfLines={1}>
-                {user?.legal_name || "MCHJ \"Grand Travel\""}
+                {partner?.legal_name || "MCHJ \"Grand Travel\""}
               </Text>
             </Box>
           </HStack>

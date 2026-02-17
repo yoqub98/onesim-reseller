@@ -10,11 +10,11 @@ import { AppIconButton, SegmentedControl } from "../ui";
 
 function AppTopbar({ isDesktop, onOpenMenu }) {
   const { currency, setCurrency } = useCurrency();
-  const { logout, user } = useAuth();
+  const { logout, user, partner } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate("/login");
   };
 
@@ -73,10 +73,10 @@ function AppTopbar({ isDesktop, onOpenMenu }) {
         <HStack spacing={2} pl={{ base: 1, md: 3 }} borderLeftWidth={{ base: 0, md: "1px" }} borderColor={uiColors.border}>
           <Box textAlign="right" display={{ base: "none", md: "block" }}>
             <Text fontSize="xs" fontWeight="700" color={uiColors.textPrimary}>
-              {user?.company_name || "Aziz Rakhimov"}
+              {partner?.company_name || "Company"}
             </Text>
             <Text fontSize="11px" color={uiColors.textSecondary}>
-              {user?.email || "Agent Admin"}
+              {user?.email || ""}
             </Text>
           </Box>
           <Box
@@ -92,7 +92,7 @@ function AppTopbar({ isDesktop, onOpenMenu }) {
             fontWeight="700"
             fontSize="xs"
           >
-            {user?.company_name?.charAt(0) || "AR"}
+            {partner?.company_name?.charAt(0) || "?"}
           </Box>
         </HStack>
 
