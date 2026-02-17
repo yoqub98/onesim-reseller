@@ -54,14 +54,22 @@ export function AuthProvider({ children }) {
 
   // Initialize session on mount
   useEffect(() => {
-    const init = async () => {
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-      setSession(currentSession);
+    let cancelled = false;
 
-      if (currentSession?.user) {
-        await bootstrapUser(currentSession.user);
+    const init = async () => {
+      try {
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        if (cancelled) return;
+        setSession(currentSession);
+
+        if (currentSession?.user) {
+          await bootstrapUser(currentSession.user);
+        }
+      } catch (err) {
+        if (err?.name === "AbortError") return;
+        console.error("Auth init error:", err);
       }
-      setIsLoading(false);
+      if (!cancelled) setIsLoading(false);
     };
 
     init();
@@ -69,6 +77,7 @@ export function AuthProvider({ children }) {
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
+        if (cancelled) return;
         setSession(newSession);
 
         if (event === "SIGNED_IN" && newSession?.user) {
@@ -81,7 +90,10 @@ export function AuthProvider({ children }) {
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
   }, [bootstrapUser]);
 
   // Sign up a new partner
