@@ -433,6 +433,8 @@ const uz = {
     supportPhone: "+998 93 514 98 08",
     cardTitle: "Kompaniya ro'yxatdan o'tish ma'lumotlari",
     badge: "Tasdiqlash kutilmoqda",
+    approvedTitle: "Hisobingiz admin tomonidan tasdiqlandi",
+    approvedDescription: "Endi platformadan to'liq foydalanishingiz mumkin.",
     fields: {
       dateRegistered: "Ro'yxatdan o'tgan sana",
       companyName: "Kompaniya nomi",

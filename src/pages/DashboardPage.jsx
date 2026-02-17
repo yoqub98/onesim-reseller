@@ -8,17 +8,20 @@ import {
   Text,
   VStack
 } from "@chakra-ui/react";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { BanknotesIcon, SignalIcon, ShoppingCartIcon } from "@heroicons/react/24/outline";
 import StatCard from "../components/dashboard/StatCard";
 import RecentOrdersTable from "../components/dashboard/RecentOrdersTable";
+import AppToastStack from "../components/common/AppToastStack";
 import { ORDER_STATUS_ACTIVE } from "../constants/statuses";
 import { useCurrency } from "../context/CurrencyContext";
 import { useLocale } from "../context/LocaleContext";
+import { useAppToasts } from "../hooks/useAppToasts";
 import { useServiceData } from "../hooks/useServiceData";
 import { ordersService } from "../services/ordersService";
 import { earningsService } from "../services/earningsService";
 import { formatMoneyFromUsd } from "../utils/currency";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const EMPTY_LIST = [];
 
@@ -34,9 +37,13 @@ async function loadDashboardData() {
 }
 
 function DashboardPage() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const { currency } = useCurrency();
   const { dict } = useLocale();
+  const { toasts, pushToast } = useAppToasts();
   const dashboardT = dict.dashboard;
+  const pendingT = dict.pending || {};
   const commonT = dict.common;
   const {
     data: dashboardData,
@@ -53,8 +60,31 @@ function DashboardPage() {
     [orders]
   );
 
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const approved = params.get("approved") === "1";
+
+    if (approved) {
+      pushToast({
+        type: "success",
+        title: pendingT.approvedTitle || "Sizning akkauntingiz tasdiqlandi",
+        description: pendingT.approvedDescription || "Admin hisobingizni faollashtirdi. Endi platformadan to'liq foydalanishingiz mumkin.",
+        duration: 3800,
+      });
+
+      navigate("/", { replace: true });
+    }
+  }, [
+    location.search,
+    navigate,
+    pendingT.approvedDescription,
+    pendingT.approvedTitle,
+    pushToast,
+  ]);
+
   return (
     <VStack align="stretch" spacing={8} w="full">
+      <AppToastStack items={toasts} />
       <Box>
         <Heading size="lg">{dashboardT.title}</Heading>
         <Text color="gray.600" mt={1}>{dashboardT.subtitle}</Text>

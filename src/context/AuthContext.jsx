@@ -9,6 +9,7 @@ export function AuthProvider({ children }) {
   const [partner, setPartner] = useState(null);
   const [profile, setProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [authError, setAuthError] = useState(null);
 
   // Fetch partner record for the authenticated user
   const fetchPartnerProfile = useCallback(async (userId) => {
@@ -58,6 +59,7 @@ export function AuthProvider({ children }) {
 
     const init = async () => {
       try {
+        setAuthError(null);
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         if (cancelled) return;
         setSession(currentSession);
@@ -66,10 +68,15 @@ export function AuthProvider({ children }) {
           await bootstrapUser(currentSession.user);
         }
       } catch (err) {
-        if (err?.name === "AbortError") return;
+        if (err?.name === "AbortError") {
+          console.warn("Auth init aborted");
+          return;
+        }
+        setAuthError(err);
         console.error("Auth init error:", err);
+      } finally {
+        if (!cancelled) setIsLoading(false);
       }
-      if (!cancelled) setIsLoading(false);
     };
 
     init();
@@ -77,15 +84,22 @@ export function AuthProvider({ children }) {
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
-        if (cancelled) return;
-        setSession(newSession);
+        try {
+          if (cancelled) return;
+          setSession(newSession);
 
-        if (event === "SIGNED_IN" && newSession?.user) {
-          await bootstrapUser(newSession.user);
-        } else if (event === "SIGNED_OUT") {
-          setUser(null);
-          setProfile(null);
-          setPartner(null);
+          if (event === "SIGNED_IN" && newSession?.user) {
+            await bootstrapUser(newSession.user);
+          } else if (event === "SIGNED_OUT") {
+            setUser(null);
+            setProfile(null);
+            setPartner(null);
+          }
+        } catch (err) {
+          if (err?.name !== "AbortError") {
+            setAuthError(err);
+            console.error("Auth state change error:", err);
+          }
         }
       }
     );
@@ -200,6 +214,7 @@ export function AuthProvider({ children }) {
     profile,
     partner,
     isLoading,
+    authError,
     isAuthenticated,
     isPendingApproval,
     isApproved,

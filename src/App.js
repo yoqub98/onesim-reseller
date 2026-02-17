@@ -13,6 +13,17 @@ import PendingAccountPage from "./pages/PendingAccountPage";
 import SettingsPage from "./pages/SettingsPage";
 import SignupPage from "./pages/SignupPage";
 
+function FullPageStatus({ title, description }) {
+  return (
+    <div style={{ minHeight: "100vh", display: "grid", placeItems: "center", padding: "24px" }}>
+      <div style={{ maxWidth: "560px", textAlign: "center" }}>
+        <h1 style={{ marginBottom: "8px", fontSize: "1.25rem" }}>{title}</h1>
+        <p style={{ margin: 0, color: "#666" }}>{description}</p>
+      </div>
+    </div>
+  );
+}
+
 /**
  * ProtectedRoute - Redirects based on auth & partner status
  *
@@ -22,10 +33,19 @@ import SignupPage from "./pages/SignupPage";
  * 3. Authenticated + active partner -> full access
  */
 function ProtectedRoute({ children, pendingOnly = false }) {
-  const { isAuthenticated, isLoading, isPendingApproval, hasPartnerRecord } = useAuth();
+  const { isAuthenticated, isLoading, authError, isPendingApproval, hasPartnerRecord } = useAuth();
 
   if (isLoading) {
-    return null;
+    return <FullPageStatus title="Loading..." description="Checking your session." />;
+  }
+
+  if (authError) {
+    return (
+      <FullPageStatus
+        title="Unable to initialize authentication"
+        description="Please refresh the page. If the issue continues, check Supabase environment variables in Vercel."
+      />
+    );
   }
 
   if (!isAuthenticated) {
@@ -37,7 +57,7 @@ function ProtectedRoute({ children, pendingOnly = false }) {
 
   if (pendingOnly && !needsApproval) {
     // Already approved, redirect away from pending page
-    return <Navigate to="/" replace />;
+    return <Navigate to="/?approved=1" replace />;
   }
 
   if (!pendingOnly && needsApproval) {
@@ -52,10 +72,19 @@ function ProtectedRoute({ children, pendingOnly = false }) {
  * PublicRoute - Redirects to dashboard if user is already authenticated
  */
 function PublicRoute({ children }) {
-  const { isAuthenticated, isLoading, isPendingApproval, hasPartnerRecord } = useAuth();
+  const { isAuthenticated, isLoading, authError, isPendingApproval, hasPartnerRecord } = useAuth();
 
   if (isLoading) {
-    return null;
+    return <FullPageStatus title="Loading..." description="Checking your session." />;
+  }
+
+  if (authError) {
+    return (
+      <FullPageStatus
+        title="Authentication setup error"
+        description="Check your deployment environment and Supabase configuration."
+      />
+    );
   }
 
   if (isAuthenticated) {
@@ -67,10 +96,19 @@ function PublicRoute({ children }) {
 }
 
 function FallbackRoute() {
-  const { isAuthenticated, isLoading, isPendingApproval, hasPartnerRecord } = useAuth();
+  const { isAuthenticated, isLoading, authError, isPendingApproval, hasPartnerRecord } = useAuth();
 
   if (isLoading) {
-    return null;
+    return <FullPageStatus title="Loading..." description="Checking your session." />;
+  }
+
+  if (authError) {
+    return (
+      <FullPageStatus
+        title="Authentication setup error"
+        description="Check your deployment environment and Supabase configuration."
+      />
+    );
   }
 
   if (!isAuthenticated) {

@@ -252,6 +252,8 @@ const ru = {
     supportPhone: "+998 93 514 98 08",
     cardTitle: "Данные регистрации компании",
     badge: "Ожидает одобрения",
+    approvedTitle: "Ваш аккаунт одобрен администратором",
+    approvedDescription: "Теперь вы можете пользоваться платформой полностью.",
     fields: {
       dateRegistered: "Дата регистрации",
       companyName: "Название компании",
