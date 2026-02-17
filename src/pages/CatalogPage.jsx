@@ -154,7 +154,7 @@ function CatalogPage() {
   };
 
   return (
-    <VStack align="stretch" spacing={8} maxW="1320px" mx="auto">
+    <VStack align="stretch" spacing={8} w="full">
       <Flex justify="space-between" align={{ base: "start", md: "center" }} gap={4} wrap="wrap">
         <Box>
           <Heading color={uiColors.textPrimary} fontSize={{ base: "2xl", md: "3xl" }} fontWeight="800">{t.title}</Heading>

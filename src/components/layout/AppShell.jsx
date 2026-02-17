@@ -8,7 +8,7 @@ import { uiColors } from "../../design-system/tokens";
 import AppTopbar from "./AppTopbar";
 import SidebarNav from "./SidebarNav";
 
-function AppShell({ children }) {
+function AppShell({ children, disableNavigation = false }) {
   const [isOpen, setIsOpen] = useState(false);
   const isDesktop = useBreakpointValue({ base: false, lg: true });
 
@@ -25,7 +25,7 @@ function AppShell({ children }) {
         borderRightWidth="1px"
         borderColor={uiColors.sidebarBorder}
       >
-        <SidebarNav onNavigate={onClose} />
+        <SidebarNav onNavigate={onClose} disabled={disableNavigation} />
       </Box>
 
       {!isDesktop && isOpen ? (
@@ -39,7 +39,7 @@ function AppShell({ children }) {
             borderColor={uiColors.sidebarBorder}
             onClick={(event) => event.stopPropagation()}
           >
-            <SidebarNav onNavigate={onClose} />
+            <SidebarNav onNavigate={onClose} disabled={disableNavigation} />
           </Box>
         </Box>
       ) : null}
@@ -57,8 +57,10 @@ function AppShell({ children }) {
             mx="auto"
             minH="calc(100vh - 88px - 24px)"
             bg="white"
-            borderWidth="1px"
-            borderColor="#d6dbe4"
+            border="none"
+            borderWidth="0"
+            boxShadow="none"
+            outline="none"
             borderRadius={{ base: "14px", md: "18px", xl: "21px" }}
             p={{ base: 4, md: 6, xl: 8 }}
             overflow="clip"

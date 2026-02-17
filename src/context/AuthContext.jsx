@@ -18,6 +18,8 @@ import { createContext, useContext, useEffect, useState } from "react";
  *   id: string,            // auth user id
  *   email: string,
  *   company_name: string,  // used by topbar/sidebar
+ *   approval_status?: 'pending'|'approved',
+ *   registered_at?: string, // ISO date string
  *   partner_id?: string,   // useful for scoped writes
  *   role?: 'partner'|'admin'
  * }
@@ -54,6 +56,7 @@ export function AuthProvider({ children }) {
       id: "mock-user-id",
       email: userData.email || "partner@example.com",
       company_name: userData.company_name || "Example Company",
+      approval_status: userData.approval_status || "approved",
       ...userData
     };
     setUser(user);
@@ -70,6 +73,7 @@ export function AuthProvider({ children }) {
   const value = {
     user,
     isAuthenticated: !!user,
+    isPendingApproval: user?.approval_status === "pending",
     isLoading,
     login,
     logout

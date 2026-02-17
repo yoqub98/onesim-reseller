@@ -1,8 +1,9 @@
 import PlaceholderPage from "../components/common/PlaceholderPage";
-import uz from "../i18n/uz";
+import { useLocale } from "../context/LocaleContext";
 
 function SettingsPage() {
-  return <PlaceholderPage title={uz.nav.settings} message={uz.common.placeholder} />;
+  const { dict } = useLocale();
+  return <PlaceholderPage title={dict.nav.settings} message={dict.common.placeholder} />;
 }
 
 export default SettingsPage;

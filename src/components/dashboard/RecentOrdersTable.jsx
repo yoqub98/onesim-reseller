@@ -13,7 +13,7 @@ import {
   VStack
 } from "@chakra-ui/react";
 import { useCurrency } from "../../context/CurrencyContext";
-import uz from "../../i18n/uz";
+import { useLocale } from "../../context/LocaleContext";
 import { formatMoneyFromUsd } from "../../utils/currency";
 import CountryFlag from "../common/CountryFlag";
 
@@ -27,10 +27,13 @@ const statusColorMap = {
 
 function RecentOrdersTable({ orders = [], isLoading }) {
   const { currency } = useCurrency();
+  const { dict } = useLocale();
+  const dashboardT = dict.dashboard;
+  const statusT = dict.status;
 
   return (
     <Box bg="white" borderRadius="xl" borderWidth="1px" borderColor="gray.200" p={5}>
-      <Text fontSize="md" fontWeight="semibold" mb={4}>{uz.dashboard.recentOrders}</Text>
+      <Text fontSize="md" fontWeight="semibold" mb={4}>{dashboardT.recentOrders}</Text>
         {isLoading ? (
           <VStack spacing={3} align="stretch">
             <Skeleton height="16px" />
@@ -41,7 +44,7 @@ function RecentOrdersTable({ orders = [], isLoading }) {
 
         {!isLoading && orders.length === 0 ? (
           <Box py={8} textAlign="center">
-            <Text color="gray.500">{uz.dashboard.noOrders}</Text>
+            <Text color="gray.500">{dashboardT.noOrders}</Text>
           </Box>
         ) : null}
 
@@ -53,7 +56,7 @@ function RecentOrdersTable({ orders = [], isLoading }) {
                   <HStack justify="space-between">
                     <Text fontWeight="semibold">{order.id}</Text>
                     <Badge colorScheme={statusColorMap[order.status] || "gray"}>
-                      {uz.status[order.status] || order.status}
+                      {statusT[order.status] || order.status}
                     </Badge>
                   </HStack>
                   <HStack justify="space-between">

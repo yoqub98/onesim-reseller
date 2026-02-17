@@ -131,7 +131,7 @@ function OrderDetailsPage() {
   }
 
   return (
-    <Box position="relative" pb={28} maxW="1320px" mx="auto">
+    <Box position="relative" pb={28} w="full">
       <AppToastStack items={toasts} />
       <VStack align="stretch" spacing={8}>
         <HStack justify="space-between" align={{ base: "start", md: "center" }} flexWrap="wrap" gap={3}>

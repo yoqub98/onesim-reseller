@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { LanguageSwitcher } from "../components/common/LanguageSwitcher";
 import { AppButton } from "../components/ui/AppButton";
 import { AppInput } from "../components/ui/AppInput";
+import { useAuth } from "../context/AuthContext";
 import { useLocale } from "../context/LocaleContext";
 import { uiColors, uiRadii } from "../design-system/tokens";
 
@@ -35,6 +36,7 @@ import { uiColors, uiRadii } from "../design-system/tokens";
  */
 export default function SignupPage() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const { dict: t } = useLocale();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -58,6 +60,18 @@ export default function SignupPage() {
 
     // Mock registration - navigate after 1.5s
     setTimeout(() => {
+      login({
+        email: email || "partner@example.com",
+        company_name: companyName || "Example Company",
+        legal_name: legalName,
+        inn,
+        address,
+        contact_full_name: contactFullName,
+        contact_phone: contactPhone,
+        contract_number: contractNumber,
+        approval_status: "pending",
+        registered_at: new Date().toISOString()
+      });
       setIsLoading(false);
       // TODO: Replace with actual Supabase registration
       // const { data, error } = await supabase.auth.signUp({
@@ -77,7 +91,7 @@ export default function SignupPage() {
       // });
       //
       // Then create partner record in your database
-      navigate("/");
+      navigate("/pending-account");
     }, 1500);
   };
 

@@ -1,5 +1,5 @@
 export const uiColors = {
-  pageBg: "#f8fafc",
+  pageBg: "#E7ECF3",
   surface: "#ffffff",
   surfaceSoft: "#f1f5f9",
   border: "#e2e8f0",

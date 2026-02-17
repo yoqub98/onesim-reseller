@@ -1,8 +1,9 @@
 import PlaceholderPage from "../components/common/PlaceholderPage";
-import uz from "../i18n/uz";
+import { useLocale } from "../context/LocaleContext";
 
 function EarningsPage() {
-  return <PlaceholderPage title={uz.nav.earnings} message={uz.common.placeholder} />;
+  const { dict } = useLocale();
+  return <PlaceholderPage title={dict.nav.earnings} message={dict.common.placeholder} />;
 }
 
 export default EarningsPage;

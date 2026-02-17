@@ -61,6 +61,15 @@ const groupsFallback = {
   }
 };
 
+// Layout rhythm rule for page consistency:
+// - Section vertical gap: 32-40px
+// - Grid gap: 24-32px
+// - Search block spacing follows same rhythm as other portal pages
+const groupsPageSpacing = {
+  section: { base: 8, md: 10 },
+  grid: { base: 6, xl: 8 }
+};
+
 function GroupsPage() {
   const { dict } = useLocale();
   const t = dict.groups || groupsFallback;
@@ -121,16 +130,16 @@ function GroupsPage() {
   };
 
   return (
-    <Box position="relative" maxW="1320px" mx="auto">
+    <Box position="relative" w="full">
       <AppToastStack items={toasts} />
 
-      <VStack align="stretch" spacing={6}>
+      <VStack align="stretch" spacing={groupsPageSpacing.section}>
         <HStack justify="space-between" align={{ base: "start", md: "center" }} flexWrap="wrap" gap={3}>
-          <Box>
+          <Box pb={1}>
             <Heading color={uiColors.textPrimary} fontSize={{ base: "30px", md: "32px" }} fontWeight="800" lineHeight="1.2">
               {t.title}
             </Heading>
-            <Text color={uiColors.textSecondary} mt={1}>{t.subtitle}</Text>
+            <Text color={uiColors.textSecondary} mt={2}>{t.subtitle}</Text>
           </Box>
 
           <AppButton
@@ -143,7 +152,7 @@ function GroupsPage() {
           </AppButton>
         </HStack>
 
-        <SurfaceCard p={3}>
+        <SurfaceCard p={{ base: 3, md: 4 }}>
           <AppInput
             value={query}
             onChange={(event) => setQuery(event.target.value)}
@@ -159,7 +168,7 @@ function GroupsPage() {
         ) : null}
 
         {isLoading ? (
-          <SimpleGrid columns={{ base: 1, xl: 2 }} spacing={6}>
+          <SimpleGrid columns={{ base: 1, xl: 2 }} spacing={groupsPageSpacing.grid}>
             {Array.from({ length: 2 }).map((_, index) => (
               <SurfaceCard key={`group-skeleton-${index}`} p={5} minH="310px" bg={uiColors.surfaceSoft} />
             ))}
@@ -168,7 +177,7 @@ function GroupsPage() {
 
         {!isLoading && !loadError ? (
           groups.length ? (
-            <SimpleGrid columns={{ base: 1, xl: 2 }} spacing={6}>
+            <SimpleGrid columns={{ base: 1, xl: 2 }} spacing={groupsPageSpacing.grid}>
               {groups.map((group) => (
                 <GroupCard
                   key={group.id}

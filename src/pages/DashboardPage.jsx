@@ -14,11 +14,11 @@ import StatCard from "../components/dashboard/StatCard";
 import RecentOrdersTable from "../components/dashboard/RecentOrdersTable";
 import { ORDER_STATUS_ACTIVE } from "../constants/statuses";
 import { useCurrency } from "../context/CurrencyContext";
+import { useLocale } from "../context/LocaleContext";
 import { useServiceData } from "../hooks/useServiceData";
 import { ordersService } from "../services/ordersService";
 import { earningsService } from "../services/earningsService";
 import { formatMoneyFromUsd } from "../utils/currency";
-import uz from "../i18n/uz";
 
 const EMPTY_LIST = [];
 
@@ -35,6 +35,9 @@ async function loadDashboardData() {
 
 function DashboardPage() {
   const { currency } = useCurrency();
+  const { dict } = useLocale();
+  const dashboardT = dict.dashboard;
+  const commonT = dict.common;
   const {
     data: dashboardData,
     loading: isLoading,
@@ -43,7 +46,7 @@ function DashboardPage() {
   } = useServiceData(loadDashboardData);
   const orders = dashboardData?.orders || EMPTY_LIST;
   const earnings = dashboardData?.earnings || null;
-  const error = loadError ? (loadError.message || "Dashboard yuklanmadi") : "";
+  const error = loadError ? (loadError.message || commonT.loading) : "";
 
   const activeEsimsCount = useMemo(
     () => orders.filter((order) => order.status === ORDER_STATUS_ACTIVE).length,
@@ -51,10 +54,10 @@ function DashboardPage() {
   );
 
   return (
-    <VStack align="stretch" spacing={8} maxW="1320px" mx="auto">
+    <VStack align="stretch" spacing={8} w="full">
       <Box>
-        <Heading size="lg">{uz.dashboard.title}</Heading>
-        <Text color="gray.600" mt={1}>{uz.dashboard.subtitle}</Text>
+        <Heading size="lg">{dashboardT.title}</Heading>
+        <Text color="gray.600" mt={1}>{dashboardT.subtitle}</Text>
       </Box>
 
       {error ? (
@@ -69,7 +72,7 @@ function DashboardPage() {
           gap={3}
         >
           <Text color="red.700" fontSize="sm">{error}</Text>
-          <Button ml="auto" size="sm" onClick={refetch}>{uz.common.retry}</Button>
+          <Button ml="auto" size="sm" onClick={refetch}>{commonT.retry}</Button>
         </Box>
       ) : null}
 
@@ -79,7 +82,7 @@ function DashboardPage() {
             <Skeleton h="124px" borderRadius="xl" />
           ) : (
             <StatCard
-              label={uz.dashboard.stats.totalOrders}
+              label={dashboardT.stats.totalOrders}
               value={earnings?.totalOrders ?? orders.length}
               icon={<ShoppingCartIcon width={22} color="#FE4F18" />}
             />
@@ -90,7 +93,7 @@ function DashboardPage() {
             <Skeleton h="124px" borderRadius="xl" />
           ) : (
             <StatCard
-              label={uz.dashboard.stats.activeEsims}
+              label={dashboardT.stats.activeEsims}
               value={earnings?.activeEsims ?? activeEsimsCount}
               icon={<SignalIcon width={22} color="#FE4F18" />}
             />
@@ -101,9 +104,9 @@ function DashboardPage() {
             <Skeleton h="124px" borderRadius="xl" />
           ) : (
             <StatCard
-              label={uz.dashboard.stats.totalEarnings}
+              label={dashboardT.stats.totalEarnings}
               value={formatMoneyFromUsd(earnings?.totalCommission ?? 0, currency)}
-              helper={`${earnings?.monthlyGrowthPct ?? 0}% oyma-oy o'sish`}
+              helper={`${earnings?.monthlyGrowthPct ?? 0}%`}
               icon={<BanknotesIcon width={22} color="#FE4F18" />}
             />
           )}
@@ -111,7 +114,7 @@ function DashboardPage() {
       </Grid>
 
       <Box bg="white" p={6} borderRadius="xl" borderWidth="1px" borderColor="gray.200" minH="180px">
-        <Heading size="sm" mb={4}>{uz.dashboard.chartTitle}</Heading>
+        <Heading size="sm" mb={4}>{dashboardT.chartTitle}</Heading>
         {isLoading ? (
           <Skeleton h="90px" />
         ) : (
@@ -125,7 +128,7 @@ function DashboardPage() {
             placeItems="center"
             color="gray.500"
           >
-            {uz.dashboard.chartPlaceholder}
+            {dashboardT.chartPlaceholder}
           </Box>
         )}
       </Box>

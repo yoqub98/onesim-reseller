@@ -87,7 +87,7 @@ function OrdersPage() {
   };
 
   return (
-    <Box position="relative" maxW="1320px" mx="auto">
+    <Box position="relative" w="full">
       <AppToastStack items={toasts} />
       <VStack align="stretch" spacing={10}>
         <Box pb="14px">

@@ -9,14 +9,15 @@ import LoginPage from "./pages/LoginPage";
 import NewOrderPage from "./pages/NewOrderPage";
 import OrderDetailsPage from "./pages/OrderDetailsPage";
 import OrdersPage from "./pages/OrdersPage";
+import PendingAccountPage from "./pages/PendingAccountPage";
 import SettingsPage from "./pages/SettingsPage";
 import SignupPage from "./pages/SignupPage";
 
 /**
  * ProtectedRoute - Redirects to login if user is not authenticated
  */
-function ProtectedRoute({ children }) {
-  const { isAuthenticated, isLoading } = useAuth();
+function ProtectedRoute({ children, pendingOnly = false }) {
+  const { isAuthenticated, isLoading, isPendingApproval } = useAuth();
 
   if (isLoading) {
     return null; // Or a loading spinner
@@ -26,24 +27,46 @@ function ProtectedRoute({ children }) {
     return <Navigate to="/login" replace />;
   }
 
-  return <AppShell>{children}</AppShell>;
+  if (pendingOnly && !isPendingApproval) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (!pendingOnly && isPendingApproval) {
+    return <Navigate to="/pending-account" replace />;
+  }
+
+  return <AppShell disableNavigation={pendingOnly}>{children}</AppShell>;
 }
 
 /**
  * PublicRoute - Redirects to dashboard if user is already authenticated
  */
 function PublicRoute({ children }) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, isPendingApproval } = useAuth();
 
   if (isLoading) {
     return null;
   }
 
   if (isAuthenticated) {
-    return <Navigate to="/" replace />;
+    return <Navigate to={isPendingApproval ? "/pending-account" : "/"} replace />;
   }
 
   return children;
+}
+
+function FallbackRoute() {
+  const { isAuthenticated, isLoading, isPendingApproval } = useAuth();
+
+  if (isLoading) {
+    return null;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <Navigate to={isPendingApproval ? "/pending-account" : "/"} replace />;
 }
 
 function AppRoutes() {
@@ -132,9 +155,17 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/pending-account"
+        element={
+          <ProtectedRoute pendingOnly>
+            <PendingAccountPage />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Catch-all redirect */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<FallbackRoute />} />
     </Routes>
   );
 }

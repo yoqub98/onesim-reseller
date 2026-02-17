@@ -6,8 +6,7 @@ const LOCALE_STORAGE_KEY = "onesim_locale";
 
 const dictionaries = {
   uz,
-  ru,
-  en: uz
+  ru
 };
 
 const LocaleContext = createContext({
@@ -19,7 +18,7 @@ const LocaleContext = createContext({
 export function LocaleProvider({ children }) {
   const [locale, setLocale] = useState(() => {
     const stored = window.localStorage.getItem(LOCALE_STORAGE_KEY);
-    return ["uz", "ru", "en"].includes(stored) ? stored : "uz";
+    return ["uz", "ru"].includes(stored) ? stored : "uz";
   });
 
   useEffect(() => {

@@ -4,12 +4,15 @@ import {
 } from "@heroicons/react/24/outline";
 import { NavLink } from "react-router-dom";
 import { BriefcaseIcon } from "@heroicons/react/24/solid";
+import { useAuth } from "../../context/AuthContext";
 import { SIDEBAR_NAV_ITEMS } from "../../constants/navigation";
 import { uiColors, uiRadii } from "../../design-system/tokens";
 
-function SidebarNav({ onNavigate }) {
+function SidebarNav({ onNavigate, disabled = false }) {
+  const { user } = useAuth();
+
   return (
-    <Flex direction="column" h="full">
+    <Flex direction="column" h="full" opacity={disabled ? 0.65 : 1}>
       <Box px={6} py={6} borderBottomWidth="1px" borderColor={uiColors.sidebarBorder}>
         <Text color="white" fontSize="2xl" fontWeight="700">OneSIM</Text>
         <Box
@@ -33,10 +36,10 @@ function SidebarNav({ onNavigate }) {
             </Box>
             <Box minW={0}>
               <Text color="white" fontWeight="700" fontSize="sm" noOfLines={1}>
-                Grand Travel Tour
+                {user?.company_name || "Grand Travel Tour"}
               </Text>
               <Text color={uiColors.textMuted} fontSize="xs" noOfLines={1}>
-                MCHJ "Grand Travel"
+                {user?.legal_name || "MCHJ \"Grand Travel\""}
               </Text>
             </Box>
           </HStack>
@@ -46,6 +49,26 @@ function SidebarNav({ onNavigate }) {
       <VStack align="stretch" spacing={2} px={4} py={6}>
         {SIDEBAR_NAV_ITEMS.map((item) => {
           const Icon = item.icon;
+
+          if (disabled) {
+            return (
+              <HStack
+                key={item.to}
+                px={4}
+                h="44px"
+                borderRadius={uiRadii.md}
+                color={uiColors.sidebarText}
+                bg="transparent"
+                cursor="not-allowed"
+                opacity={0.75}
+                aria-disabled="true"
+              >
+                <Icon width={18} />
+                <Text fontSize="sm" fontWeight="500">{item.label}</Text>
+              </HStack>
+            );
+          }
+
           return (
             <NavLink key={item.to} to={item.to} onClick={onNavigate}>
               {({ isActive }) => (
@@ -74,7 +97,8 @@ function SidebarNav({ onNavigate }) {
           borderRadius={uiRadii.md}
           color={uiColors.textMuted}
           _hover={{ bg: "rgba(255,255,255,0.08)" }}
-          cursor="pointer"
+          cursor={disabled ? "not-allowed" : "pointer"}
+          opacity={disabled ? 0.75 : 1}
         >
           <ArrowLeftOnRectangleIcon width={18} />
           <Text fontSize="sm">Chiqish</Text>

@@ -35,12 +35,13 @@ function GroupCard({ group, t, onEdit, onDelete, onOpenDetails, onAttachPackage 
 
   return (
     <SurfaceCard
+      h="100%"
       p={5}
       borderRadius="13px"
       boxShadow="0px 2px 16.8px rgba(0,0,0,0.11)"
       borderColor="rgba(208, 215, 224, 0.7)"
     >
-      <VStack align="stretch" spacing={4}>
+      <VStack align="stretch" spacing={5}>
         <HStack justify="space-between" align="start">
           <Box>
             <Text fontSize="2xl" fontWeight="800" color={uiColors.textPrimary} lineHeight="1.2">
@@ -50,7 +51,7 @@ function GroupCard({ group, t, onEdit, onDelete, onOpenDetails, onAttachPackage 
               <Badge bg={uiColors.surfaceSoft} color="#45556c" fontWeight="600" borderRadius="4px" px={2} py={0.5}>
                 ID: {group.code || group.id.slice(0, 8)}
               </Badge>
-              <Text color={uiColors.textSecondary} fontSize="sm">•</Text>
+              <Text color={uiColors.textSecondary} fontSize="sm">â€¢</Text>
               <Text color={uiColors.textSecondary} fontSize="sm">{group.destination || t.labels.unknown}</Text>
             </HStack>
           </Box>

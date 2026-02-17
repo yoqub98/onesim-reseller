@@ -25,6 +25,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import CountryFlag from "../components/common/CountryFlag";
 import StepIndicator from "../components/order/StepIndicator";
 import { useCurrency } from "../context/CurrencyContext";
+import { useLocale } from "../context/LocaleContext";
 import { DELIVERY_EMAIL, DELIVERY_MANUAL, DELIVERY_SMS } from "../constants/delivery";
 import { useFormFields } from "../hooks/useFormFields";
 import { useServiceData } from "../hooks/useServiceData";
@@ -34,11 +35,6 @@ import { groupsService } from "../services/groupsService";
 import { ordersService } from "../services/ordersService";
 import { formatMoneyFromUsd } from "../utils/currency";
 
-const steps = [
-  { id: "plan", label: uz.order.steps.plan },
-  { id: "mode", label: uz.order.steps.mode },
-  { id: "checkout", label: uz.order.steps.checkout }
-];
 const EMPTY_LIST = [];
 
 // Backend handoff:
@@ -54,6 +50,14 @@ function NewOrderPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { currency } = useCurrency();
+  const { dict } = useLocale();
+  const orderT = dict.order || uz.order;
+  const commonT = dict.common || uz.common;
+  const steps = [
+    { id: "plan", label: orderT.steps.plan },
+    { id: "mode", label: orderT.steps.mode },
+    { id: "checkout", label: orderT.steps.checkout }
+  ];
   const { data: newOrderData, loading: isLoading, error: loadError } = useServiceData(loadNewOrderData);
   const plans = newOrderData?.plans || EMPTY_LIST;
   const groups = newOrderData?.groups || EMPTY_LIST;
@@ -96,33 +100,33 @@ function NewOrderPage() {
     }
 
     if (step === 1 && !selectedPlanId) {
-      setFormError(uz.order.errors.plan);
+      setFormError(orderT.errors.plan);
       return false;
     }
 
     if (step === 2) {
       if ((mode === "customer" || mode === "self") && !fields.customerName.trim()) {
-        setFormError(uz.order.errors.customerName);
+        setFormError(orderT.errors.customerName);
         return false;
       }
 
       if (deliveryMethod === DELIVERY_SMS && !fields.phone.trim()) {
-        setFormError(uz.order.errors.phone);
+        setFormError(orderT.errors.phone);
         return false;
       }
 
       if (deliveryMethod === DELIVERY_EMAIL && !fields.email.trim()) {
-        setFormError(uz.order.errors.email);
+        setFormError(orderT.errors.email);
         return false;
       }
 
       if (mode === "group" && !fields.groupId) {
-        setFormError(uz.order.errors.group);
+        setFormError(orderT.errors.group);
         return false;
       }
 
       if (scheduleType === "later" && !fields.scheduledAt) {
-        setFormError(uz.order.errors.schedule);
+        setFormError(orderT.errors.schedule);
         return false;
       }
     }
@@ -162,7 +166,7 @@ function NewOrderPage() {
         commission
       });
 
-      setSuccessMessage(`${uz.order.success}: ${order.id}`);
+      setSuccessMessage(`${orderT.success}: ${order.id}`);
       setTimeout(() => {
         navigate("/orders", { state: { createdOrderId: order.id } });
       }, 800);
@@ -198,17 +202,17 @@ function NewOrderPage() {
   };
 
   return (
-    <VStack align="stretch" spacing={8} maxW="1320px" mx="auto">
+    <VStack align="stretch" spacing={8} w="full">
       <Box>
-        <Heading size="lg">{uz.order.title}</Heading>
-        <Text color="gray.600" mt={1}>{uz.order.subtitle}</Text>
+        <Heading size="lg">{orderT.title}</Heading>
+        <Text color="gray.600" mt={1}>{orderT.subtitle}</Text>
       </Box>
 
       <StepIndicator steps={steps} currentStep={step} />
 
       {location.state?.preselectedPlanId ? (
         <Box borderWidth="1px" borderColor="orange.200" bg="orange.50" borderRadius="lg" p={3}>
-          <Text color="orange.800" fontSize="sm">{uz.order.preselected}</Text>
+          <Text color="orange.800" fontSize="sm">{orderT.preselected}</Text>
         </Box>
       ) : null}
 
@@ -243,7 +247,7 @@ function NewOrderPage() {
 
       {!isLoading && step === 1 ? (
         <Box bg="white" borderWidth="1px" borderColor="gray.200" borderRadius="xl" p={4}>
-          <Text fontWeight="semibold" mb={3}>{uz.order.steps.plan}</Text>
+          <Text fontWeight="semibold" mb={3}>{orderT.steps.plan}</Text>
           <Grid templateColumns={{ base: "1fr", lg: "repeat(2, 1fr)" }} gap={3}>
             {plans.map((plan) => {
               const isActive = selectedPlanId === plan.id;
@@ -287,11 +291,11 @@ function NewOrderPage() {
       {!isLoading && step === 2 ? (
         <VStack align="stretch" spacing={4}>
           <Box bg="white" borderWidth="1px" borderColor="gray.200" borderRadius="xl" p={4}>
-            <Text fontWeight="semibold" mb={3}>{uz.order.modeTitle}</Text>
+            <Text fontWeight="semibold" mb={3}>{orderT.modeTitle}</Text>
             <Grid templateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }} gap={3}>
-              {modeCard("self", uz.order.modes.self, <UserCircleIcon width={18} />)}
-              {modeCard("customer", uz.order.modes.customer, <DevicePhoneMobileIcon width={18} />)}
-              {modeCard("group", uz.order.modes.group, <UserGroupIcon width={18} />)}
+              {modeCard("self", orderT.modes.self, <UserCircleIcon width={18} />)}
+              {modeCard("customer", orderT.modes.customer, <DevicePhoneMobileIcon width={18} />)}
+              {modeCard("group", orderT.modes.group, <UserGroupIcon width={18} />)}
             </Grid>
           </Box>
 
@@ -301,7 +305,7 @@ function NewOrderPage() {
             {(mode === "self" || mode === "customer") ? (
               <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={3}>
                 <Box>
-                  <Text fontSize="xs" color="gray.500" mb={1}>{uz.order.fields.customerName}</Text>
+                  <Text fontSize="xs" color="gray.500" mb={1}>{orderT.fields.customerName}</Text>
                   <Box
                     as="input"
                     w="100%"
@@ -316,7 +320,7 @@ function NewOrderPage() {
                 </Box>
 
                 <Box>
-                  <Text fontSize="xs" color="gray.500" mb={1}>{uz.order.fields.phone}</Text>
+                  <Text fontSize="xs" color="gray.500" mb={1}>{orderT.fields.phone}</Text>
                   <Box
                     as="input"
                     w="100%"
@@ -332,7 +336,7 @@ function NewOrderPage() {
                 </Box>
 
                 <Box>
-                  <Text fontSize="xs" color="gray.500" mb={1}>{uz.order.fields.email}</Text>
+                  <Text fontSize="xs" color="gray.500" mb={1}>{orderT.fields.email}</Text>
                   <Box
                     as="input"
                     w="100%"
@@ -348,7 +352,7 @@ function NewOrderPage() {
               </Grid>
             ) : (
               <Box>
-                <Text fontSize="xs" color="gray.500" mb={1}>{uz.order.fields.group}</Text>
+                <Text fontSize="xs" color="gray.500" mb={1}>{orderT.fields.group}</Text>
                 <Box
                   as="select"
                   w="100%"
@@ -371,7 +375,7 @@ function NewOrderPage() {
 
           <Grid templateColumns={{ base: "1fr", lg: "1fr 1fr" }} gap={4}>
             <Box bg="white" borderWidth="1px" borderColor="gray.200" borderRadius="xl" p={4}>
-              <Text fontWeight="semibold" mb={3}>{uz.order.fields.deliveryMethod}</Text>
+              <Text fontWeight="semibold" mb={3}>{orderT.fields.deliveryMethod}</Text>
               <VStack align="stretch" spacing={2}>
                 <Button
                   variant={deliveryMethod === DELIVERY_SMS ? "solid" : "outline"}
@@ -381,7 +385,7 @@ function NewOrderPage() {
                   leftIcon={<DevicePhoneMobileIcon width={16} />}
                   onClick={() => setDeliveryMethod(DELIVERY_SMS)}
                 >
-                  {uz.order.delivery.sms}
+                  {orderT.delivery.sms}
                 </Button>
                 <Button
                   variant={deliveryMethod === DELIVERY_EMAIL ? "solid" : "outline"}
@@ -391,7 +395,7 @@ function NewOrderPage() {
                   leftIcon={<EnvelopeIcon width={16} />}
                   onClick={() => setDeliveryMethod(DELIVERY_EMAIL)}
                 >
-                  {uz.order.delivery.email}
+                  {orderT.delivery.email}
                 </Button>
                 <Button
                   variant={deliveryMethod === DELIVERY_MANUAL ? "solid" : "outline"}
@@ -401,13 +405,13 @@ function NewOrderPage() {
                   leftIcon={<UserCircleIcon width={16} />}
                   onClick={() => setDeliveryMethod(DELIVERY_MANUAL)}
                 >
-                  {uz.order.delivery.manual}
+                  {orderT.delivery.manual}
                 </Button>
               </VStack>
             </Box>
 
             <Box bg="white" borderWidth="1px" borderColor="gray.200" borderRadius="xl" p={4}>
-              <Text fontWeight="semibold" mb={3}>{uz.order.fields.schedule}</Text>
+              <Text fontWeight="semibold" mb={3}>{orderT.fields.schedule}</Text>
               <VStack align="stretch" spacing={2}>
                 <Button
                   variant={scheduleType === "now" ? "solid" : "outline"}
@@ -417,7 +421,7 @@ function NewOrderPage() {
                   leftIcon={<CheckCircleIcon width={16} />}
                   onClick={() => setScheduleType("now")}
                 >
-                  {uz.order.schedule.now}
+                  {orderT.schedule.now}
                 </Button>
                 <Button
                   variant={scheduleType === "later" ? "solid" : "outline"}
@@ -427,7 +431,7 @@ function NewOrderPage() {
                   leftIcon={<CalendarDaysIcon width={16} />}
                   onClick={() => setScheduleType("later")}
                 >
-                  {uz.order.schedule.later}
+                  {orderT.schedule.later}
                 </Button>
 
                 {scheduleType === "later" ? (
@@ -472,11 +476,11 @@ function NewOrderPage() {
                 </HStack>
                 <HStack justify="space-between">
                   <Text color="gray.600">Rejim</Text>
-                  <Badge colorScheme="orange">{uz.order.modes[mode]}</Badge>
+                  <Badge colorScheme="orange">{orderT.modes[mode]}</Badge>
                 </HStack>
                 <HStack justify="space-between">
                   <Text color="gray.600">Yetkazish</Text>
-                  <Text>{uz.order.delivery[deliveryMethod]}</Text>
+                  <Text>{orderT.delivery[deliveryMethod]}</Text>
                 </HStack>
               </VStack>
             ) : (
@@ -485,27 +489,27 @@ function NewOrderPage() {
           </Box>
 
           <Box bg="white" borderWidth="1px" borderColor="gray.200" borderRadius="xl" p={4}>
-            <Text fontWeight="semibold" mb={3}>{uz.order.summary.title}</Text>
+            <Text fontWeight="semibold" mb={3}>{orderT.summary.title}</Text>
             <VStack align="stretch" spacing={2}>
               <HStack justify="space-between">
-                <HStack spacing={1}><SignalIcon width={16} /><Text>{uz.order.summary.price}</Text></HStack>
+                <HStack spacing={1}><SignalIcon width={16} /><Text>{orderT.summary.price}</Text></HStack>
                 <Text>{formatMoneyFromUsd(selectedPlan ? selectedPlan.price : 0, currency)}</Text>
               </HStack>
               <HStack justify="space-between">
-                <Text>{uz.order.summary.discount}</Text>
+                <Text>{orderT.summary.discount}</Text>
                 <Text color="green.600">- {formatMoneyFromUsd(discount, currency)}</Text>
               </HStack>
               <HStack justify="space-between">
-                <Text>{uz.order.summary.subtotal}</Text>
+                <Text>{orderT.summary.subtotal}</Text>
                 <Text fontWeight="semibold">{formatMoneyFromUsd(subtotal, currency)}</Text>
               </HStack>
               <HStack justify="space-between">
-                <HStack spacing={1}><BanknotesIcon width={16} /><Text>{uz.order.summary.commission}</Text></HStack>
+                <HStack spacing={1}><BanknotesIcon width={16} /><Text>{orderT.summary.commission}</Text></HStack>
                 <Text color="orange.600">{formatMoneyFromUsd(commission, currency)}</Text>
               </HStack>
               <HStack justify="space-between">
-                <Text>{uz.order.summary.payment}</Text>
-                <Badge colorScheme="gray">{uz.order.summary.paymentValue}</Badge>
+                <Text>{orderT.summary.payment}</Text>
+                <Badge colorScheme="gray">{orderT.summary.paymentValue}</Badge>
               </HStack>
             </VStack>
 
@@ -519,7 +523,7 @@ function NewOrderPage() {
               isDisabled={isSubmitting}
               rightIcon={<ArrowRightIcon width={16} />}
             >
-              {isSubmitting ? uz.order.creating : uz.order.create}
+              {isSubmitting ? orderT.creating : orderT.create}
             </Button>
           </Box>
         </Grid>
@@ -528,12 +532,12 @@ function NewOrderPage() {
       {!isLoading ? (
         <HStack justify="space-between" pt={1}>
           <Button variant="outline" onClick={onBack} isDisabled={step === 1 || isSubmitting}>
-            {uz.common.back}
+            {commonT.back}
           </Button>
 
           {step < 3 ? (
             <Button bg="#FE4F18" color="white" _hover={{ bg: "#e74716" }} onClick={onNext}>
-              {uz.common.next}
+              {commonT.next}
             </Button>
           ) : null}
         </HStack>
@@ -543,3 +547,4 @@ function NewOrderPage() {
 }
 
 export default NewOrderPage;
+
