@@ -1,9 +1,7 @@
-import { Squares2X2Icon, TableCellsIcon } from "@heroicons/react/24/outline";
-import { Box, Flex, Heading, HStack, Text, VStack } from "@chakra-ui/react";
-import { useCallback, useMemo, useState } from "react";
+import { Box, Flex, Heading, Text, VStack } from "@chakra-ui/react";
+import { useCallback, useMemo } from "react";
 import AppToastStack from "../components/common/AppToastStack";
 import { CatalogFilters, PackageDetailsModal, PlanCardGrid } from "../components/catalog";
-import { SegmentedControl } from "../components/ui";
 import { useAuth } from "../context/AuthContext";
 import { useCurrency } from "../context/CurrencyContext";
 import { useLocale } from "../context/LocaleContext";
@@ -46,7 +44,6 @@ function CatalogPage() {
   const { toasts, pushToast } = useAppToasts();
   const t = dict.catalog;
 
-  const [view, setView] = useState("table");
   const detailsModal = useModal();
 
   const requestParams = useMemo(() => ({ partner }), [partner]);
@@ -173,13 +170,6 @@ function CatalogPage() {
           <Heading color={uiColors.textPrimary} fontSize={{ base: "2xl", md: "3xl" }} fontWeight="800">{t.title}</Heading>
           <Text color={uiColors.textSecondary} mt={1}>{t.subtitle}</Text>
         </Box>
-        <HStack spacing={3} flexWrap="wrap">
-          <SegmentedControl
-            value={view}
-            options={[{ value: "table", label: <TableCellsIcon width={14} /> }, { value: "cards", label: <Squares2X2Icon width={14} /> }]}
-            onChange={setView}
-          />
-        </HStack>
       </Flex>
 
       <CatalogFilters
@@ -198,7 +188,6 @@ function CatalogPage() {
 
       <PlanCardGrid
         t={t}
-        view={view}
         isLoading={isLoading}
         error={error}
         plans={filteredPlans}

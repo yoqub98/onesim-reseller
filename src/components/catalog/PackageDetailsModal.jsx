@@ -83,11 +83,11 @@ function PackageDetailsModal({
             <SurfaceCard p={4}>
               <Text fontSize="xs" color={uiColors.textSecondary} mb={1}>B2C Price</Text>
               <Text fontSize="sm" color={uiColors.textMuted} textDecor="line-through">
-                {renderOriginalPrice(plan)} (+{plan.defaultMarginPercent || 0}%)
+                {renderOriginalPrice(plan)}
               </Text>
               <Text fontSize="xs" color={uiColors.textSecondary} mt={3} mb={1}>Reseller Price ({currency})</Text>
               <Text fontWeight="800" fontSize="xl" color={uiColors.textPrimary}>
-                {renderResellerPrice(plan)} (-{plan.partnerDiscountRate || 0}%)
+                {renderResellerPrice(plan)}
               </Text>
             </SurfaceCard>
 

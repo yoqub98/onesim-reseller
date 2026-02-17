@@ -2,7 +2,10 @@ import { Box } from "@chakra-ui/react";
 import { CircleFlag } from "react-circle-flags";
 
 function CountryFlag({ code, size = 18 }) {
-  if (!code) {
+  const normalizedCode = String(code || "").trim().toLowerCase();
+  const isValidCode = /^[a-z]{2}$/.test(normalizedCode);
+
+  if (!isValidCode) {
     return <Box w={`${size}px`} h={`${size}px`} borderRadius="full" bg="gray.200" />;
   }
 
@@ -16,7 +19,7 @@ function CountryFlag({ code, size = 18 }) {
       borderColor="gray.200"
       flexShrink={0}
     >
-      <CircleFlag countryCode={String(code).toLowerCase()} height={size} />
+      <CircleFlag countryCode={normalizedCode} height={size} />
     </Box>
   );
 }

@@ -54,6 +54,28 @@ export function mapPackageRowToPlan(row, options = {}) {
     Array.isArray(row?.location_network_list) && row.location_network_list.length > 0
       ? row.location_network_list[0]?.locationName
       : "";
+  const firstLocationCode =
+    Array.isArray(row?.location_network_list) && row.location_network_list.length > 0
+      ? row.location_network_list[0]?.locationCode
+      : "";
+  const firstCoveredCountryCode =
+    Array.isArray(row?.covered_countries) && row.covered_countries.length > 0
+      ? row.covered_countries[0]?.code
+      : "";
+  const isTwoLetterCode = (value) => typeof value === "string" && /^[A-Za-z]{2}$/.test(value.trim());
+  const locationType = row?.location_type || "";
+  const destination =
+    locationType === "country"
+      ? firstLocationName || row?.location_name || row?.location_code || ""
+      : row?.name || row?.location_name || row?.location_code || "";
+  const countryCode =
+    locationType === "country"
+      ? (isTwoLetterCode(firstLocationCode) ? firstLocationCode : row?.location_code || "")
+      : isTwoLetterCode(firstLocationCode)
+        ? firstLocationCode
+        : isTwoLetterCode(firstCoveredCountryCode)
+          ? firstCoveredCountryCode
+          : "";
   const partnerDiscountRate = asNumber(
     options?.partner?.custom_discount_rate ?? options?.partner?.discount_rate,
     0
@@ -64,8 +86,8 @@ export function mapPackageRowToPlan(row, options = {}) {
   return {
     id: row?.id || row?.package_code || "",
     name: row?.name || row?.package_name || "",
-    destination: firstLocationName || row?.location_name || row?.location_code || "",
-    countryCode: row?.location_code || "",
+    destination,
+    countryCode,
     dataGb: asNumber(row?.data_gb, dataBytesToGb(row?.data_volume)),
     dataLabel: row?.data_gb ? `${asNumber(row.data_gb)}GB` : "",
     validityDays: asNumber(row?.duration, 0),
@@ -79,7 +101,7 @@ export function mapPackageRowToPlan(row, options = {}) {
     apiPriceUsd,
     defaultMarginPercent,
     partnerDiscountRate,
-    locationType: row?.location_type || "",
+    locationType,
     packageCode: row?.package_code || "",
     slug: row?.slug || "",
     dataType: asNumber(row?.data_type, 0),
