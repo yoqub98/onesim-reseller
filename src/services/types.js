@@ -46,6 +46,7 @@
  * @property {string} [destinationCountryCode]
  * @property {string|null} [travelStartDate] ISO date
  * @property {string|null} [travelEndDate] ISO date
+ * @property {string} [packageId]
  * @property {string} [packageLabel]
  * @property {'scheduled'|'unassigned'|string} [packageStatus]
  * @property {string|null} [packageScheduledAt] ISO datetime

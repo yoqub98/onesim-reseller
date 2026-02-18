@@ -4,6 +4,7 @@ export { AppInput } from "./AppInput";
 export { default as AppMultiSelect } from "./AppMultiSelect";
 export { FilterChips, SegmentedControl } from "./FilterChips";
 export { default as AppSelect } from "./AppSelect";
+export { default as AppSwitch } from "./AppSwitch";
 export { default as SurfaceCard } from "./SurfaceCard";
 export { AppDataTable, AppDataTableCell, AppDataTableRow } from "./AppDataTable";
 export { default as PackageDisplay } from "./PackageDisplay";

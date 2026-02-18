@@ -29,7 +29,7 @@ function formatSchedule(value) {
   });
 }
 
-function GroupCard({ group, t, onEdit, onDelete, onOpenDetails, onAttachPackage }) {
+function GroupCard({ group, t, deliveryIcon: DeliveryIcon, onEdit, onDelete, onOpenDetails, onAttachPackage }) {
   const membersCount = group.members?.length || 0;
   const hasPackage = Boolean(group.packageLabel);
 
@@ -140,13 +140,19 @@ function GroupCard({ group, t, onEdit, onDelete, onOpenDetails, onAttachPackage 
         </Box>
 
         <HStack justify="space-between" align="center">
-          <HStack spacing={2}>
+          <HStack spacing={3}>
             <Box bg={uiColors.accentSoft} borderRadius="999px" p={1.5} color={uiColors.accent}>
               <UserGroupIcon width={14} />
             </Box>
-            <Text color={uiColors.textPrimary} fontWeight="500">
-              {membersCount} {t.labels.members}
-            </Text>
+            <Box>
+              <Text color={uiColors.textPrimary} fontWeight="500">
+                {membersCount} {t.labels.members}
+              </Text>
+              <HStack spacing={1.5} mt={0.5} color={uiColors.textSecondary}>
+                {DeliveryIcon ? <DeliveryIcon width={13} /> : null}
+                <Text fontSize="xs" textTransform="capitalize">{group.deliveryMethod || "sms"}</Text>
+              </HStack>
+            </Box>
           </HStack>
           <AppButton variant="soft" h="36px" minW="102px" onClick={() => onOpenDetails(group)}>
             {t.actions.details}

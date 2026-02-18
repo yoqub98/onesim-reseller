@@ -1,15 +1,22 @@
-import { MagnifyingGlassIcon, PlusIcon } from "@heroicons/react/24/outline";
+import {
+  DevicePhoneMobileIcon,
+  EnvelopeIcon,
+  MagnifyingGlassIcon,
+  PlusIcon,
+  PrinterIcon
+} from "@heroicons/react/24/outline";
 import { Box, SimpleGrid, Text, VStack } from "@chakra-ui/react";
 import { useMemo, useState } from "react";
 import AppToastStack from "../components/common/AppToastStack";
 import PageHeader from "../components/layout/PageHeader";
-import { GroupCard, GroupDetailsModal, GroupFormModal } from "../components/groups";
+import { GroupCard, GroupDetailsModal, GroupFormModal, GroupPaymentModal } from "../components/groups";
 import { AppButton, AppInput, SurfaceCard } from "../components/ui";
 import { pageLayout, uiColors } from "../design-system/tokens";
 import { useAppToasts } from "../hooks/useAppToasts";
 import { useServiceData } from "../hooks/useServiceData";
 import { useLocale } from "../context/LocaleContext";
 import { groupsService } from "../services/groupsService";
+import { plansMock } from "../mock/catalogMock";
 
 const groupsFallback = {
   title: "Mijozlar Guruhlari",
@@ -41,23 +48,45 @@ const groupsFallback = {
   form: {
     createTitle: "Yangi guruh yaratish",
     editTitle: "Guruhni tahrirlash",
-    helper: "Bu modal mock, backend integration keyin ulanadi",
+    helper: "Mijozlar guruhi va eSIM yetkazib berish sozlamalari",
     name: "Guruh nomi",
     namePlaceholder: "Masalan: Dubay Safari",
-    destination: "Yo'nalish",
+    destination: "Boradigan davlat",
     destinationPlaceholder: "Masalan: BAA",
     countryCode: "Davlat kodi",
     departure: "Ketish sanasi",
     return: "Qaytish sanasi",
-    members: "Mijozlar",
-    membersPlaceholder: "Har qator: Ism, Telefon, Email",
-    membersHelper: "Misol: Ali Valiyev, +998901112233, ali@example.com"
+    deliveryMethod: "eSIM yetkazib berish usuli",
+    assignPackageNow: "Yaratishda paket biriktirish",
+    assignPackageNowHelper: "Yoqilsa, saqlangandan keyin to'lov tasdiqlash oynasi ochiladi.",
+    package: "Paket",
+    packagePlaceholder: "Paketni tanlang",
+    customers: "Mijozlar ro'yxati",
+    customerName: "Ism familiya",
+    customerPhone: "Telefon raqam",
+    customerEmail: "Email",
+    optional: "ixtiyoriy",
+    membersEmpty: "Mijozlar qo'shilmagan",
+    smsRequired: "SMS uchun telefon majburiy",
+    emailRequired: "Email uchun email majburiy",
+    requiredFields: "Guruh nomi va davlat majburiy",
+    packageRequired: "Paketni tanlang yoki paket biriktirishni o'chiring"
+  },
+  payment: {
+    title: "Guruh to'lovi",
+    package: "Paket",
+    howMany: "Mijozlar soni",
+    total: "Umumiy summa",
+    totalDeducted: "Jami chegirma",
+    subtotal: "To'lov summasi",
+    payAndConfirm: "Pay and confirm"
   },
   toast: {
     createdTitle: "Guruh yaratildi",
     updatedTitle: "Guruh yangilandi",
     deletedTitle: "Guruh o'chirildi",
     packageAttachedTitle: "Paket biriktirildi",
+    paymentConfirmedTitle: "To'lov tasdiqlandi",
     actionDescription: "Bu demo UI amali, backend ulanmagan"
   }
 };
@@ -72,6 +101,7 @@ function GroupsPage() {
   const [query, setQuery] = useState("");
   const [formModal, setFormModal] = useState({ isOpen: false, mode: "create", group: null });
   const [detailsGroup, setDetailsGroup] = useState(null);
+  const [paymentModal, setPaymentModal] = useState({ isOpen: false, payment: null });
 
   const listParams = useMemo(() => ({ query }), [query]);
   const {
@@ -90,17 +120,66 @@ function GroupsPage() {
     });
   };
 
+  const packageOptions = plansMock;
+
+  const deliveryIcons = {
+    sms: DevicePhoneMobileIcon,
+    email: EnvelopeIcon,
+    manual: PrinterIcon
+  };
+
   const handleSubmitGroup = async (payload) => {
     if (!payload?.name?.trim()) {
       return;
     }
+    const cleanPayload = {
+      name: payload.name,
+      destination: payload.destination,
+      destinationCountryCode: payload.destinationCountryCode,
+      travelStartDate: payload.travelStartDate,
+      travelEndDate: payload.travelEndDate,
+      members: payload.members,
+      deliveryMethod: payload.deliveryMethod,
+      deliveryTime: payload.deliveryTime
+    };
 
     if (formModal.mode === "edit" && formModal.group?.id) {
-      await groupsService.updateGroup(formModal.group.id, payload);
+      await groupsService.updateGroup(formModal.group.id, cleanPayload);
       showInfoToast(t.toast.updatedTitle);
     } else {
-      await groupsService.createGroup(payload);
-      showInfoToast(t.toast.createdTitle);
+      const membersCount = Math.max(payload?.members?.length || 0, 1);
+      const selectedPackage = payload?.packageSelected || null;
+      const grossTotalUzs = (selectedPackage?.resellerPriceUzs || 0) * membersCount;
+      const deductedUzs = Math.round(grossTotalUzs * 0.05);
+      const subtotalUzs = grossTotalUzs - deductedUzs;
+
+      const createdGroup = await groupsService.createGroup({
+        ...cleanPayload,
+        packageId: payload.assignPackageNow ? selectedPackage?.id : undefined,
+        packageLabel: payload.assignPackageNow && selectedPackage
+          ? `${selectedPackage.name} (${selectedPackage.dataLabel} / ${selectedPackage.validityDays} kun)`
+          : "",
+        packageStatus: payload.assignPackageNow ? "scheduled" : "unassigned",
+        packageScheduledAt: payload.assignPackageNow ? new Date().toISOString() : null
+      });
+
+      if (payload.assignPackageNow && selectedPackage) {
+        setPaymentModal({
+          isOpen: true,
+          payment: {
+            groupId: createdGroup.id,
+            groupName: createdGroup.name,
+            packageName: selectedPackage.name,
+            packageMeta: `${selectedPackage.destination} • ${selectedPackage.dataLabel} • ${selectedPackage.validityDays} kun`,
+            quantity: membersCount,
+            grossTotalUzs,
+            deductedUzs,
+            subtotalUzs
+          }
+        });
+      } else {
+        showInfoToast(t.toast.createdTitle);
+      }
     }
 
     setFormModal({ isOpen: false, mode: "create", group: null });
@@ -114,8 +193,14 @@ function GroupsPage() {
   };
 
   const handleAttachPackage = async (group) => {
+    const matchedPlan = packageOptions.find((item) =>
+      item.destination.toLowerCase().includes((group.destination || "").toLowerCase())
+    );
     await groupsService.updateGroup(group.id, {
-      packageLabel: `${group.destination || "Mixed"} 10GB / 15 kun`,
+      packageId: matchedPlan?.id || "",
+      packageLabel: matchedPlan
+        ? `${matchedPlan.name} (${matchedPlan.dataLabel} / ${matchedPlan.validityDays} kun)`
+        : `${group.destination || "Mixed"} 10GB / 15 kun`,
       packageStatus: "scheduled",
       packageScheduledAt: new Date().toISOString()
     });
@@ -170,6 +255,7 @@ function GroupsPage() {
                   key={group.id}
                   group={group}
                   t={t}
+                  deliveryIcon={deliveryIcons[group.deliveryMethod]}
                   onEdit={(item) => setFormModal({ isOpen: true, mode: "edit", group: item })}
                   onDelete={handleDeleteGroup}
                   onOpenDetails={setDetailsGroup}
@@ -190,11 +276,38 @@ function GroupsPage() {
         mode={formModal.mode}
         group={formModal.group}
         t={t}
+        packageOptions={packageOptions}
         onClose={() => setFormModal({ isOpen: false, mode: "create", group: null })}
         onSubmit={handleSubmitGroup}
+        onValidationError={(message) => {
+          pushToast({
+            type: "error",
+            title: message,
+            description: t.toast.actionDescription
+          });
+        }}
       />
 
       <GroupDetailsModal group={detailsGroup} t={t} onClose={() => setDetailsGroup(null)} />
+      <GroupPaymentModal
+        isOpen={paymentModal.isOpen}
+        payment={paymentModal.payment}
+        labels={{
+          title: t.payment?.title || groupsFallback.payment.title,
+          package: t.payment?.package || groupsFallback.payment.package,
+          howMany: t.payment?.howMany || groupsFallback.payment.howMany,
+          total: t.payment?.total || groupsFallback.payment.total,
+          totalDeducted: t.payment?.totalDeducted || groupsFallback.payment.totalDeducted,
+          subtotal: t.payment?.subtotal || groupsFallback.payment.subtotal,
+          payAndConfirm: t.payment?.payAndConfirm || groupsFallback.payment.payAndConfirm,
+          close: t.actions.close
+        }}
+        onClose={() => setPaymentModal({ isOpen: false, payment: null })}
+        onConfirm={() => {
+          showInfoToast(t.toast.paymentConfirmedTitle || groupsFallback.toast.paymentConfirmedTitle);
+          setPaymentModal({ isOpen: false, payment: null });
+        }}
+      />
     </Box>
   );
 }

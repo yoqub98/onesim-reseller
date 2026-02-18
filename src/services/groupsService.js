@@ -74,6 +74,7 @@ export const groupsService = {
       destinationCountryCode: payload?.destinationCountryCode?.trim()?.toUpperCase() || "",
       travelStartDate: payload?.travelStartDate || null,
       travelEndDate: payload?.travelEndDate || null,
+      packageId: payload?.packageId || "",
       packageLabel: payload?.packageLabel || "",
       packageStatus: payload?.packageStatus || "unassigned",
       packageScheduledAt: payload?.packageScheduledAt || null,
