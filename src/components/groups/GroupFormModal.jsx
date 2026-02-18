@@ -1,22 +1,192 @@
 import {
+  ChevronDownIcon,
   DevicePhoneMobileIcon,
   EnvelopeIcon,
+  MagnifyingGlassIcon,
   PlusIcon,
   PrinterIcon,
   TrashIcon,
   XMarkIcon
 } from "@heroicons/react/24/outline";
-import { Box, HStack, Text, VStack } from "@chakra-ui/react";
-import { useEffect, useMemo, useState } from "react";
+import { Box, HStack, Input, Text, VStack } from "@chakra-ui/react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { DELIVERY_EMAIL, DELIVERY_MANUAL, DELIVERY_SMS } from "../../constants/delivery";
 import { uiColors } from "../../design-system/tokens";
-import { AppButton, AppIconButton, AppInput, AppSelect, AppSwitch, SurfaceCard } from "../ui";
+import {
+  AppButton,
+  AppIconButton,
+  AppInput,
+  AppSwitch,
+  PackageDisplay,
+  SurfaceCard
+} from "../ui";
 
 const DELIVERY_OPTIONS = [
   { value: DELIVERY_SMS, label: "SMS orqali", icon: DevicePhoneMobileIcon },
   { value: DELIVERY_EMAIL, label: "Email orqali", icon: EnvelopeIcon },
   { value: DELIVERY_MANUAL, label: "Qo'lda beraman", icon: PrinterIcon }
 ];
+
+function getDefaultPhoneByDelivery(method) {
+  return method === DELIVERY_SMS ? "+998" : "";
+}
+
+function sanitizeMember(member) {
+  const phone = String(member?.phone || "").trim();
+  const email = String(member?.email || "").trim();
+  return {
+    name: String(member?.name || "").trim(),
+    phone: phone === "+998" ? "" : phone,
+    email
+  };
+}
+
+function PackagePickerSelect({
+  value,
+  options,
+  placeholder,
+  searchPlaceholder,
+  emptyLabel,
+  onChange
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const containerRef = useRef(null);
+
+  const selectedPackage = useMemo(
+    () => options.find((item) => item.id === value) || null,
+    [options, value]
+  );
+
+  const filteredOptions = useMemo(() => {
+    if (!query.trim()) return options;
+    const normalized = query.trim().toLowerCase();
+    return options.filter((item) => {
+      const searchable = [
+        item.name,
+        item.destination,
+        item.countryCode,
+        item.dataLabel,
+        `${item.validityDays || 0}`
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return searchable.includes(normalized);
+    });
+  }, [options, query]);
+
+  useEffect(() => {
+    function onOutsideClick(event) {
+      if (!containerRef.current?.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", onOutsideClick);
+    return () => document.removeEventListener("mousedown", onOutsideClick);
+  }, []);
+
+  return (
+    <Box ref={containerRef} position="relative">
+      <SurfaceCard
+        as="button"
+        type="button"
+        w="full"
+        minH="54px"
+        p={2.5}
+        borderRadius="10px"
+        borderColor={isOpen ? uiColors.accent : uiColors.borderStrong}
+        onClick={() => setIsOpen((prev) => !prev)}
+      >
+        <HStack justify="space-between" spacing={3}>
+          {selectedPackage ? (
+            <PackageDisplay
+              countryCode={selectedPackage.countryCode}
+              destination={selectedPackage.destination || selectedPackage.name}
+              dataLabel={`${selectedPackage.dataLabel || "-"} - ${selectedPackage.validityDays || 0} kun`}
+              flagSize={28}
+            />
+          ) : (
+            <Text color={uiColors.textSecondary} fontSize="sm" textAlign="left">
+              {placeholder}
+            </Text>
+          )}
+          <Box color={uiColors.textSecondary}>
+            <ChevronDownIcon width={16} />
+          </Box>
+        </HStack>
+      </SurfaceCard>
+
+      {isOpen ? (
+        <SurfaceCard
+          position="absolute"
+          top="calc(100% + 6px)"
+          left={0}
+          right={0}
+          zIndex={70}
+          borderRadius="10px"
+          p={2.5}
+          boxShadow="0px 12px 30px rgba(15, 23, 43, 0.16)"
+        >
+          <Box position="relative">
+            <Box position="absolute" left={2.5} top="50%" transform="translateY(-50%)" color={uiColors.textSecondary}>
+              <MagnifyingGlassIcon width={14} />
+            </Box>
+            <Input
+              h="36px"
+              pl={8}
+              borderColor={uiColors.borderStrong}
+              placeholder={searchPlaceholder}
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+          </Box>
+
+          <VStack mt={2.5} align="stretch" spacing={1.5} maxH="240px" overflowY="auto">
+            {filteredOptions.length ? (
+              filteredOptions.map((item) => (
+                <SurfaceCard
+                  key={item.id}
+                  as="button"
+                  type="button"
+                  textAlign="left"
+                  p={2.5}
+                  borderRadius="8px"
+                  borderColor={item.id === value ? uiColors.accent : uiColors.border}
+                  bg={item.id === value ? uiColors.accentSoft : "white"}
+                  onClick={() => {
+                    onChange(item.id);
+                    setIsOpen(false);
+                    setQuery("");
+                  }}
+                >
+                  <HStack justify="space-between" align="start">
+                    <PackageDisplay
+                      countryCode={item.countryCode}
+                      destination={item.destination || item.name}
+                      dataLabel={`${item.dataLabel || "-"} - ${item.validityDays || 0} kun`}
+                      flagSize={24}
+                      titleSize="sm"
+                      subtitleSize="xs"
+                    />
+                    <Text fontSize="xs" color={uiColors.textSecondary}>
+                      {item.name}
+                    </Text>
+                  </HStack>
+                </SurfaceCard>
+              ))
+            ) : (
+              <Text py={2} textAlign="center" fontSize="sm" color={uiColors.textMuted}>
+                {emptyLabel}
+              </Text>
+            )}
+          </VStack>
+        </SurfaceCard>
+      ) : null}
+    </Box>
+  );
+}
 
 function GroupFormModal({
   isOpen,
@@ -37,7 +207,11 @@ function GroupFormModal({
   const [assignPackageNow, setAssignPackageNow] = useState(false);
   const [selectedPackageId, setSelectedPackageId] = useState("");
   const [members, setMembers] = useState([]);
-  const [memberInput, setMemberInput] = useState({ name: "", phone: "+998", email: "" });
+  const [memberInput, setMemberInput] = useState({
+    name: "",
+    phone: getDefaultPhoneByDelivery(DELIVERY_SMS),
+    email: ""
+  });
 
   const actions = {
     ...{
@@ -59,7 +233,6 @@ function GroupFormModal({
       namePlaceholder: "Masalan: Dubay safari",
       destination: "Boradigan davlat",
       destinationPlaceholder: "Masalan: BAA",
-      countryCode: "Davlat kodi",
       departure: "Ketish sanasi",
       return: "Qaytish sanasi",
       deliveryMethod: "eSIM yetkazib berish usuli",
@@ -67,6 +240,8 @@ function GroupFormModal({
       assignPackageNowHelper: "Yoqilsa, saqlangandan keyin to'lov tasdiqlash oynasi ochiladi.",
       package: "Paket",
       packagePlaceholder: "Paketni tanlang",
+      packageSearchPlaceholder: "Paket qidirish",
+      noPackages: "Paket topilmadi",
       customers: "Mijozlar ro'yxati",
       customerName: "Ism familiya",
       customerPhone: "Telefon raqam",
@@ -90,10 +265,14 @@ function GroupFormModal({
     setTravelStartDate(group?.travelStartDate || "");
     setTravelEndDate(group?.travelEndDate || "");
     setDeliveryMethod(group?.deliveryMethod || DELIVERY_SMS);
-    setAssignPackageNow(Boolean(group?.packageId));
+    setAssignPackageNow(Boolean(group?.packageId || group?.forceAssignPackageNow));
     setSelectedPackageId(group?.packageId || "");
     setMembers(group?.members || []);
-    setMemberInput({ name: "", phone: "+998", email: "" });
+    setMemberInput({
+      name: "",
+      phone: getDefaultPhoneByDelivery(group?.deliveryMethod || DELIVERY_SMS),
+      email: ""
+    });
   }, [group, isOpen]);
 
   const modalTitle = useMemo(
@@ -106,6 +285,31 @@ function GroupFormModal({
     [packageOptions, selectedPackageId]
   );
 
+  useEffect(() => {
+    if (!assignPackageNow || !selectedPackage) return;
+    if (!destination.trim() && selectedPackage.destination) {
+      setDestination(selectedPackage.destination);
+    }
+    if (selectedPackage.countryCode && selectedPackage.countryCode !== destinationCountryCode) {
+      setDestinationCountryCode(String(selectedPackage.countryCode).toUpperCase());
+    }
+  }, [assignPackageNow, destination, destinationCountryCode, selectedPackage]);
+
+  useEffect(() => {
+    setMemberInput((prev) => {
+      if (deliveryMethod === DELIVERY_SMS) {
+        if (!prev.phone) {
+          return { ...prev, phone: "+998" };
+        }
+        return prev;
+      }
+      if (prev.phone === "+998") {
+        return { ...prev, phone: "" };
+      }
+      return prev;
+    });
+  }, [deliveryMethod]);
+
   if (!isOpen) return null;
 
   const notifyError = (message) => {
@@ -113,28 +317,26 @@ function GroupFormModal({
   };
 
   const addMember = () => {
-    if (!memberInput.name.trim()) {
+    const nextMember = sanitizeMember(memberInput);
+    if (!nextMember.name) {
       notifyError(form.customerName);
       return;
     }
-    if (deliveryMethod === DELIVERY_SMS && memberInput.phone.replace(/\s/g, "").length <= 4) {
+    if (deliveryMethod === DELIVERY_SMS && !nextMember.phone) {
       notifyError(form.smsRequired);
       return;
     }
-    if (deliveryMethod === DELIVERY_EMAIL && !memberInput.email.trim()) {
+    if (deliveryMethod === DELIVERY_EMAIL && !nextMember.email) {
       notifyError(form.emailRequired);
       return;
     }
 
-    setMembers((prev) => [
-      ...prev,
-      {
-        name: memberInput.name.trim(),
-        phone: memberInput.phone.trim(),
-        email: memberInput.email.trim()
-      }
-    ]);
-    setMemberInput({ name: "", phone: "+998", email: "" });
+    setMembers((prev) => [...prev, nextMember]);
+    setMemberInput({
+      name: "",
+      phone: getDefaultPhoneByDelivery(deliveryMethod),
+      email: ""
+    });
   };
 
   const handleSubmit = () => {
@@ -147,6 +349,25 @@ function GroupFormModal({
       return;
     }
 
+    const sanitizedMembers = members.map((member) => sanitizeMember(member));
+    const hasInvalidMember = sanitizedMembers.some((member) => {
+      if (!member.name) return true;
+      if (deliveryMethod === DELIVERY_SMS && !member.phone) return true;
+      if (deliveryMethod === DELIVERY_EMAIL && !member.email) return true;
+      return false;
+    });
+
+    if (hasInvalidMember) {
+      notifyError(
+        deliveryMethod === DELIVERY_SMS
+          ? form.smsRequired
+          : deliveryMethod === DELIVERY_EMAIL
+            ? form.emailRequired
+            : form.customerName
+      );
+      return;
+    }
+
     onSubmit({
       id: group?.id,
       name,
@@ -154,7 +375,7 @@ function GroupFormModal({
       destinationCountryCode,
       travelStartDate,
       travelEndDate,
-      members,
+      members: sanitizedMembers,
       deliveryMethod,
       deliveryTime: "now",
       assignPackageNow,
@@ -224,14 +445,6 @@ function GroupFormModal({
                   onChange={(event) => setDestination(event.target.value)}
                   containerProps={{ flex: 1 }}
                 />
-                <AppInput
-                  label={form.countryCode}
-                  placeholder="AE"
-                  textTransform="uppercase"
-                  value={destinationCountryCode}
-                  onChange={(event) => setDestinationCountryCode(event.target.value.toUpperCase())}
-                  containerProps={{ maxW: "120px" }}
-                />
               </HStack>
               <HStack align="start" spacing={3} mt={3}>
                 <AppInput
@@ -261,14 +474,14 @@ function GroupFormModal({
               {assignPackageNow ? (
                 <Box mt={3}>
                   <Text mb={2} fontSize="sm" fontWeight="600" color={uiColors.textPrimary}>{form.package}</Text>
-                  <AppSelect value={selectedPackageId} onChange={(event) => setSelectedPackageId(event.target.value)}>
-                    <option value="">{form.packagePlaceholder}</option>
-                    {packageOptions.map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {item.name} ({item.dataLabel} - {item.validityDays} kun)
-                      </option>
-                    ))}
-                  </AppSelect>
+                  <PackagePickerSelect
+                    value={selectedPackageId}
+                    options={packageOptions}
+                    placeholder={form.packagePlaceholder}
+                    searchPlaceholder={form.packageSearchPlaceholder}
+                    emptyLabel={form.noPackages}
+                    onChange={setSelectedPackageId}
+                  />
                 </Box>
               ) : null}
             </Box>
@@ -288,9 +501,9 @@ function GroupFormModal({
                   />
                   <AppInput
                     placeholder={
-                      deliveryMethod === DELIVERY_MANUAL
-                        ? `${form.customerEmail} (${form.optional})`
-                        : form.customerEmail
+                      deliveryMethod === DELIVERY_EMAIL
+                        ? form.customerEmail
+                        : `${form.customerEmail} (${form.optional})`
                     }
                     value={memberInput.email}
                     onChange={(event) => setMemberInput((prev) => ({ ...prev, email: event.target.value }))}
@@ -298,9 +511,9 @@ function GroupFormModal({
                   />
                   <AppInput
                     placeholder={
-                      deliveryMethod === DELIVERY_MANUAL
-                        ? `${form.customerPhone} (${form.optional})`
-                        : form.customerPhone
+                      deliveryMethod === DELIVERY_SMS
+                        ? form.customerPhone
+                        : `${form.customerPhone} (${form.optional})`
                     }
                     value={memberInput.phone}
                     onChange={(event) => setMemberInput((prev) => ({ ...prev, phone: event.target.value }))}
@@ -349,3 +562,4 @@ function GroupFormModal({
 }
 
 export default GroupFormModal;
+

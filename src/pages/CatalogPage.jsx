@@ -94,6 +94,12 @@ function CatalogPage() {
   // Abort controller ref for cancelling in-flight requests
   const abortRef = useRef(0);
 
+  const refreshGroups = useCallback(async () => {
+    const groupsList = await groupsService.listGroups();
+    setGroups(groupsList);
+    return groupsList;
+  }, []);
+
   // Load filter options + groups once on mount
   useEffect(() => {
     let mounted = true;
@@ -101,7 +107,7 @@ function CatalogPage() {
       try {
         const [destinations, groupsList] = await Promise.all([
           catalogService.getDestinations(),
-          groupsService.listGroups()
+          refreshGroups()
         ]);
         if (!mounted) return;
         setDestinationOptions(destinations);
@@ -112,7 +118,7 @@ function CatalogPage() {
     }
     loadStaticData();
     return () => { mounted = false; };
-  }, []);
+  }, [refreshGroups]);
 
   // Fetch plans whenever filters, page, or partner changes
   useEffect(() => {
@@ -203,9 +209,10 @@ function CatalogPage() {
   }, []);
 
   const openBuyModal = useCallback((plan) => {
+    void refreshGroups().catch(() => {});
     buyModal.open(plan);
     resetOrderFlow();
-  }, [buyModal, resetOrderFlow]);
+  }, [buyModal, resetOrderFlow, refreshGroups]);
 
   const closeBuyModal = useCallback(() => {
     buyModal.close();
@@ -334,19 +341,38 @@ function CatalogPage() {
         operatorHelperText={t.modal.helperOperator}
         selfOrderHelperText={t.modal.helperSelf}
         onClose={closeBuyModal}
-        onTabChange={setActiveOrderTab}
+        onTabChange={(tab) => {
+          setActiveOrderTab(tab);
+          if (tab === "group") {
+            void refreshGroups().catch(() => {});
+          }
+        }}
         onCustomerAdd={() => setCustomers((prev) => [...prev, createCustomer()])}
         onCustomerRemove={(id) => setCustomers((prev) => (prev.length <= 1 ? prev : prev.filter((customer) => customer.id !== id)))}
         onCustomerUpdate={updateCustomer}
-        onGroupPickerToggle={() => setIsGroupPickerOpen((prev) => !prev)}
+        onGroupPickerToggle={() => setIsGroupPickerOpen((prev) => {
+          const next = !prev;
+          if (next) {
+            void refreshGroups().catch(() => {});
+          }
+          return next;
+        })}
         onGroupCandidateChange={setGroupCandidateId}
-        onGroupAdd={() => {
-          if (!groupCandidateId) return;
-          const group = groups.find((item) => item.id === groupCandidateId);
-          if (!group) return;
-          setSelectedGroups((prev) => [...prev, group]);
-          setGroupCandidateId("");
-          setIsGroupPickerOpen(false);
+        onGroupAdd={async () => {
+          try {
+            if (!groupCandidateId) return;
+            let group = groups.find((item) => item.id === groupCandidateId);
+            if (!group) {
+              const latestGroups = await refreshGroups();
+              group = latestGroups.find((item) => item.id === groupCandidateId);
+            }
+            if (!group) return;
+            setSelectedGroups((prev) => [...prev, group]);
+            setGroupCandidateId("");
+            setIsGroupPickerOpen(false);
+          } catch {
+            // no-op: failing group refresh should not break modal interaction
+          }
         }}
         onGroupRemove={(groupId) => setSelectedGroups((prev) => prev.filter((group) => group.id !== groupId))}
         onConfirm={onConfirmBuy}

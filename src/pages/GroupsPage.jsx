@@ -11,12 +11,13 @@ import AppToastStack from "../components/common/AppToastStack";
 import PageHeader from "../components/layout/PageHeader";
 import { GroupCard, GroupDetailsModal, GroupFormModal, GroupPaymentModal } from "../components/groups";
 import { AppButton, AppInput, SurfaceCard } from "../components/ui";
+import { useAuth } from "../context/AuthContext";
+import { useLocale } from "../context/LocaleContext";
 import { pageLayout, uiColors } from "../design-system/tokens";
 import { useAppToasts } from "../hooks/useAppToasts";
 import { useServiceData } from "../hooks/useServiceData";
-import { useLocale } from "../context/LocaleContext";
+import { catalogService } from "../services/catalogService";
 import { groupsService } from "../services/groupsService";
-import { plansMock } from "../mock/catalogMock";
 
 const groupsFallback = {
   title: "Mijozlar Guruhlari",
@@ -53,7 +54,6 @@ const groupsFallback = {
     namePlaceholder: "Masalan: Dubay Safari",
     destination: "Boradigan davlat",
     destinationPlaceholder: "Masalan: BAA",
-    countryCode: "Davlat kodi",
     departure: "Ketish sanasi",
     return: "Qaytish sanasi",
     deliveryMethod: "eSIM yetkazib berish usuli",
@@ -61,6 +61,8 @@ const groupsFallback = {
     assignPackageNowHelper: "Yoqilsa, saqlangandan keyin to'lov tasdiqlash oynasi ochiladi.",
     package: "Paket",
     packagePlaceholder: "Paketni tanlang",
+    packageSearchPlaceholder: "Paket qidirish",
+    noPackages: "Paket topilmadi",
     customers: "Mijozlar ro'yxati",
     customerName: "Ism familiya",
     customerPhone: "Telefon raqam",
@@ -87,16 +89,58 @@ const groupsFallback = {
     deletedTitle: "Guruh o'chirildi",
     packageAttachedTitle: "Paket biriktirildi",
     paymentConfirmedTitle: "To'lov tasdiqlandi",
-    actionDescription: "Bu demo UI amali, backend ulanmagan"
+    actionDescription: "Ma'lumotlar bazasiga saqlandi"
   }
 };
 
 const gridGap = { base: 4, md: 6, lg: 8 };
 
+async function loadGroupPackageOptions(params = {}) {
+  const partner = params?.partner || null;
+  const pageSize = 250;
+
+  const firstPage = await catalogService.getPlans({
+    partner,
+    page: 1,
+    pageSize
+  });
+
+  const totalCount = firstPage?.totalCount || 0;
+  let plans = firstPage?.plans || [];
+  let currentPage = 2;
+
+  while (plans.length < totalCount && currentPage <= 20) {
+    const nextPage = await catalogService.getPlans({
+      partner,
+      page: currentPage,
+      pageSize
+    });
+    const nextPlans = nextPage?.plans || [];
+    if (!nextPlans.length) {
+      break;
+    }
+
+    plans = plans.concat(nextPlans);
+    currentPage += 1;
+  }
+
+  const uniqueById = new Map();
+  plans.forEach((plan) => {
+    uniqueById.set(plan.id, plan);
+  });
+
+  return Array.from(uniqueById.values());
+}
+
 function GroupsPage() {
+  const { partner } = useAuth();
   const { dict } = useLocale();
   const t = dict.groups || groupsFallback;
   const { toasts, pushToast } = useAppToasts();
+  const partnerDiscountRateRaw = Number(
+    partner?.effective_discount_rate ?? partner?.custom_discount_rate ?? partner?.discount_rate ?? 5
+  );
+  const partnerDiscountRate = Number.isFinite(partnerDiscountRateRaw) ? partnerDiscountRateRaw : 5;
 
   const [query, setQuery] = useState("");
   const [formModal, setFormModal] = useState({ isOpen: false, mode: "create", group: null });
@@ -112,6 +156,10 @@ function GroupsPage() {
   } = useServiceData(groupsService.listGroups, listParams);
   const groups = groupsData || [];
 
+  const packageParams = useMemo(() => ({ partner }), [partner]);
+  const { data: packageOptionsData } = useServiceData(loadGroupPackageOptions, packageParams);
+  const packageOptions = packageOptionsData || [];
+
   const showInfoToast = (title) => {
     pushToast({
       type: "success",
@@ -119,8 +167,13 @@ function GroupsPage() {
       description: t.toast.actionDescription
     });
   };
-
-  const packageOptions = plansMock;
+  const showErrorToast = (message) => {
+    pushToast({
+      type: "error",
+      title: message || t.loadError,
+      description: t.toast.actionDescription
+    });
+  };
 
   const deliveryIcons = {
     sms: DevicePhoneMobileIcon,
@@ -132,80 +185,112 @@ function GroupsPage() {
     if (!payload?.name?.trim()) {
       return;
     }
-    const cleanPayload = {
-      name: payload.name,
-      destination: payload.destination,
-      destinationCountryCode: payload.destinationCountryCode,
-      travelStartDate: payload.travelStartDate,
-      travelEndDate: payload.travelEndDate,
-      members: payload.members,
-      deliveryMethod: payload.deliveryMethod,
-      deliveryTime: payload.deliveryTime
-    };
 
-    if (formModal.mode === "edit" && formModal.group?.id) {
-      await groupsService.updateGroup(formModal.group.id, cleanPayload);
-      showInfoToast(t.toast.updatedTitle);
-    } else {
-      const membersCount = Math.max(payload?.members?.length || 0, 1);
+    try {
       const selectedPackage = payload?.packageSelected || null;
-      const grossTotalUzs = (selectedPackage?.resellerPriceUzs || 0) * membersCount;
-      const deductedUzs = Math.round(grossTotalUzs * 0.05);
-      const subtotalUzs = grossTotalUzs - deductedUzs;
-
-      const createdGroup = await groupsService.createGroup({
-        ...cleanPayload,
-        packageId: payload.assignPackageNow ? selectedPackage?.id : undefined,
-        packageLabel: payload.assignPackageNow && selectedPackage
-          ? `${selectedPackage.name} (${selectedPackage.dataLabel} / ${selectedPackage.validityDays} kun)`
-          : "",
-        packageStatus: payload.assignPackageNow ? "scheduled" : "unassigned",
-        packageScheduledAt: payload.assignPackageNow ? new Date().toISOString() : null
-      });
-
-      if (payload.assignPackageNow && selectedPackage) {
-        setPaymentModal({
-          isOpen: true,
-          payment: {
-            groupId: createdGroup.id,
-            groupName: createdGroup.name,
-            packageName: selectedPackage.name,
-            packageMeta: `${selectedPackage.destination} • ${selectedPackage.dataLabel} • ${selectedPackage.validityDays} kun`,
-            quantity: membersCount,
-            grossTotalUzs,
-            deductedUzs,
-            subtotalUzs
+      const hasSelectedPackage = Boolean(payload.assignPackageNow && selectedPackage);
+      const packagePatch = hasSelectedPackage
+        ? {
+          packageId: selectedPackage.id,
+          packageName: selectedPackage.name,
+          packageDestination: selectedPackage.destination,
+          packageCountryCode: selectedPackage.countryCode,
+          packageDataLabel: selectedPackage.dataLabel,
+          packageValidityDays: selectedPackage.validityDays,
+          packageResellerPriceUzs: selectedPackage.resellerPriceUzs || 0,
+          packageResellerPriceUsd: selectedPackage.resellerPriceUsd || 0,
+          packageLabel: `${selectedPackage.name} (${selectedPackage.dataLabel} / ${selectedPackage.validityDays} kun)`,
+          packageStatus: "scheduled",
+          packageScheduledAt: new Date().toISOString()
+        }
+        : payload.assignPackageNow
+          ? {
+            packageId: payload.packageId || formModal.group?.packageId || "",
+            packageName: undefined,
+            packageDestination: undefined,
+            packageCountryCode: formModal.group?.destinationCountryCode || "",
+            packageDataLabel: undefined,
+            packageValidityDays: undefined,
+            packageResellerPriceUzs: undefined,
+            packageResellerPriceUsd: undefined,
+            packageLabel: formModal.group?.packageLabel || "",
+            packageStatus: formModal.group?.packageStatus || "scheduled",
+            packageScheduledAt: formModal.group?.packageScheduledAt || new Date().toISOString()
           }
-        });
-      } else {
-        showInfoToast(t.toast.createdTitle);
-      }
-    }
+          : {
+            packageId: "",
+            packageName: "",
+            packageDestination: "",
+            packageCountryCode: "",
+            packageDataLabel: "",
+            packageValidityDays: 0,
+            packageResellerPriceUzs: 0,
+            packageResellerPriceUsd: 0,
+            packageLabel: "",
+            packageStatus: "unassigned",
+            packageScheduledAt: null
+          };
 
-    setFormModal({ isOpen: false, mode: "create", group: null });
-    refetch();
+      const cleanPayload = {
+        name: payload.name,
+        destination: payload.destination,
+        destinationCountryCode:
+          selectedPackage?.countryCode
+          || packagePatch.packageCountryCode
+          || payload.destinationCountryCode,
+        travelStartDate: payload.travelStartDate,
+        travelEndDate: payload.travelEndDate,
+        members: payload.members,
+        deliveryMethod: payload.deliveryMethod,
+        deliveryTime: payload.deliveryTime,
+        ...packagePatch
+      };
+
+      if (formModal.mode === "edit" && formModal.group?.id) {
+        await groupsService.updateGroup(formModal.group.id, cleanPayload);
+        showInfoToast(t.toast.updatedTitle);
+      } else {
+        const membersCount = Math.max(payload?.members?.length || 0, 1);
+        const grossTotalUzs = (selectedPackage?.resellerPriceUzs || 0) * membersCount;
+        const deductedUzs = Math.round(grossTotalUzs * (partnerDiscountRate / 100));
+        const subtotalUzs = grossTotalUzs - deductedUzs;
+
+        const createdGroup = await groupsService.createGroup(cleanPayload);
+
+        if (payload.assignPackageNow && selectedPackage && createdGroup) {
+          setPaymentModal({
+            isOpen: true,
+            payment: {
+              groupId: createdGroup.id,
+              groupName: createdGroup.name,
+              packageName: selectedPackage.name,
+              packageMeta: `${selectedPackage.destination} - ${selectedPackage.dataLabel} - ${selectedPackage.validityDays} kun`,
+              quantity: membersCount,
+              grossTotalUzs,
+              deductedUzs,
+              subtotalUzs
+            }
+          });
+        } else {
+          showInfoToast(t.toast.createdTitle);
+        }
+      }
+
+      setFormModal({ isOpen: false, mode: "create", group: null });
+      refetch();
+    } catch (error) {
+      showErrorToast(error?.message);
+    }
   };
 
   const handleDeleteGroup = async (group) => {
-    await groupsService.deleteGroup(group.id);
-    showInfoToast(t.toast.deletedTitle);
-    refetch();
-  };
-
-  const handleAttachPackage = async (group) => {
-    const matchedPlan = packageOptions.find((item) =>
-      item.destination.toLowerCase().includes((group.destination || "").toLowerCase())
-    );
-    await groupsService.updateGroup(group.id, {
-      packageId: matchedPlan?.id || "",
-      packageLabel: matchedPlan
-        ? `${matchedPlan.name} (${matchedPlan.dataLabel} / ${matchedPlan.validityDays} kun)`
-        : `${group.destination || "Mixed"} 10GB / 15 kun`,
-      packageStatus: "scheduled",
-      packageScheduledAt: new Date().toISOString()
-    });
-    showInfoToast(t.toast.packageAttachedTitle);
-    refetch();
+    try {
+      await groupsService.deleteGroup(group.id);
+      showInfoToast(t.toast.deletedTitle);
+      refetch();
+    } catch (error) {
+      showErrorToast(error?.message);
+    }
   };
 
   return (
@@ -259,7 +344,11 @@ function GroupsPage() {
                   onEdit={(item) => setFormModal({ isOpen: true, mode: "edit", group: item })}
                   onDelete={handleDeleteGroup}
                   onOpenDetails={setDetailsGroup}
-                  onAttachPackage={handleAttachPackage}
+                  onAttachPackage={(item) => setFormModal({
+                    isOpen: true,
+                    mode: "edit",
+                    group: { ...item, forceAssignPackageNow: true }
+                  })}
                 />
               ))}
             </SimpleGrid>
