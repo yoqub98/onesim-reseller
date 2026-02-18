@@ -5,4 +5,5 @@ export { default as AppSelect } from "./AppSelect";
 export { default as SurfaceCard } from "./SurfaceCard";
 export { AppDataTable, AppDataTableCell, AppDataTableRow } from "./AppDataTable";
 export { default as PackageDisplay } from "./PackageDisplay";
+export { default as Pagination } from "./Pagination";
 export { default as UnderlineTabs } from "./UnderlineTabs";

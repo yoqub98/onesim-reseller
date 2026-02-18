@@ -16,7 +16,7 @@ function UnderlineTabs({ value, options, onChange }) {
             key={option.value}
             as="button"
             type="button"
-            px={0}
+            px={3}
             h="42px"
             border="none"
             bg="transparent"

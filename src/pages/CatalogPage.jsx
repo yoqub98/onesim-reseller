@@ -1,5 +1,5 @@
 import { VStack } from "@chakra-ui/react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CatalogFilters, OrderModal, PackageDetailsModal, PlanCardGrid } from "../components/catalog";
 import PageHeader from "../components/layout/PageHeader";
@@ -16,6 +16,7 @@ import { groupsService } from "../services/groupsService";
 import { formatMoneyFromUsd } from "../utils/currency";
 
 const EMPTY_LIST = [];
+const PAGE_SIZE = 15;
 
 const dataFilterOptionsBase = [
   { value: "all", label: "all" },
@@ -65,6 +66,7 @@ function CatalogPage() {
 
   const detailsModal = useModal();
   const buyModal = useModal();
+  const [currentPage, setCurrentPage] = useState(1);
   const [activeOrderTab, setActiveOrderTab] = useState("customer");
   const [customers, setCustomers] = useState([createCustomer()]);
   const [selectedGroups, setSelectedGroups] = useState([]);
@@ -171,6 +173,17 @@ function CatalogPage() {
         return Number(a.dataGb) - Number(b.dataGb);
       });
   }, [filters, plans]);
+
+  const totalPages = Math.ceil(filteredPlans.length / PAGE_SIZE);
+  const paginatedPlans = useMemo(
+    () => filteredPlans.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [filteredPlans, currentPage]
+  );
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters]);
 
   const renderOriginalPrice = useCallback(
     (plan) => formatMoneyFromUsd(plan.originalPriceUsd || 0, currency),
@@ -287,7 +300,11 @@ function CatalogPage() {
         t={t}
         isLoading={isLoading}
         error={error}
-        plans={filteredPlans}
+        plans={paginatedPlans}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        pageSize={PAGE_SIZE}
+        onPageChange={setCurrentPage}
         onOpenDetails={detailsModal.open}
         onBuy={openBuyModal}
         renderOriginalPrice={renderOriginalPrice}
