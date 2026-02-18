@@ -62,7 +62,7 @@ const groupsFallback = {
   }
 };
 
-const gridGap = { base: 4, md: 5, lg: 6 };
+const gridGap = { base: 4, md: 6, lg: 8 };
 
 function GroupsPage() {
   const { dict } = useLocale();
@@ -139,14 +139,14 @@ function GroupsPage() {
           </AppButton>
         </PageHeader>
 
-        <SurfaceCard p={{ base: 3, md: 4 }}>
+        <Box>
           <AppInput
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder={t.searchPlaceholder}
             leftElement={<MagnifyingGlassIcon width={16} />}
           />
-        </SurfaceCard>
+        </Box>
 
         {loadError ? (
           <SurfaceCard p={6}>
