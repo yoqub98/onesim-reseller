@@ -4,6 +4,7 @@ import AppShell from "./components/layout/AppShell";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import CatalogPage from "./pages/CatalogPage";
 import DashboardPage from "./pages/DashboardPage";
+import DesignSystemPage from "./pages/DesignSystemPage";
 import EarningsPage from "./pages/EarningsPage";
 import GroupsPage from "./pages/GroupsPage";
 import LoginPage from "./pages/LoginPage";
@@ -204,6 +205,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <EarningsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/design-system"
+        element={
+          <ProtectedRoute>
+            <DesignSystemPage />
           </ProtectedRoute>
         }
       />

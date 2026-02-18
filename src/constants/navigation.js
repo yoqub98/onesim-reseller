@@ -5,6 +5,7 @@
 import {
   BanknotesIcon,
   HomeIcon as HomeOutlineIcon,
+  PaintBrushIcon,
   RectangleStackIcon,
   Squares2X2Icon,
   UserGroupIcon
@@ -15,5 +16,6 @@ export const SIDEBAR_NAV_ITEMS = [
   { to: "/catalog", label: "eSIM Tariflar", icon: Squares2X2Icon },
   { to: "/orders", label: "Buyurtmalarim", icon: RectangleStackIcon },
   { to: "/groups", label: "Mijozlar Guruhlari", icon: UserGroupIcon },
-  { to: "/earnings", label: "Mening Daromadlarim", icon: BanknotesIcon }
+  { to: "/earnings", label: "Mening Daromadlarim", icon: BanknotesIcon },
+  { to: "/design-system", label: "Design System", icon: PaintBrushIcon }
 ];
