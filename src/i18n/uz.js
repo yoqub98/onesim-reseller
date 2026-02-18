@@ -127,6 +127,7 @@ const uz = {
       methods: {
         sms: "SMS orqali",
         email: "Email orqali",
+        manual: "Qo'lda beriladi",
         operator: "Operator tomonidan"
       },
       timeModes: {
@@ -362,12 +363,17 @@ const uz = {
       members: "ta mijoz",
       membersList: "Guruh a'zolari",
       destination: "Davlat",
+      groupStatus: {
+        draft: "Draft",
+        ready: "Tayyor",
+        archived: "Arxivlangan"
+      },
       unknown: "Belgilanmagan"
     },
     form: {
       createTitle: "Yangi guruh yaratish",
       editTitle: "Guruhni tahrirlash",
-      helper: "Bu modal mock, backend integration keyin ulanadi",
+      helper: "Mijozlar guruhi va eSIM yetkazib berish sozlamalari",
       name: "Guruh nomi",
       namePlaceholder: "Masalan: Dubay Safari",
       destination: "Yo'nalish",
@@ -384,7 +390,7 @@ const uz = {
       updatedTitle: "Guruh yangilandi",
       deletedTitle: "Guruh o'chirildi",
       packageAttachedTitle: "Paket biriktirildi",
-      actionDescription: "Bu demo UI amali, backend ulanmagan"
+      actionDescription: "Ma'lumotlar bazasiga saqlandi"
     }
   },
   status: {

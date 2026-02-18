@@ -314,7 +314,9 @@ function GroupFormModal({
   );
 
   const selectedPackage = useMemo(
-    () => packageOptions.find((item) => item.id === selectedPackageId) || null,
+    () => packageOptions.find(
+      (item) => item.id === selectedPackageId || item.packageCode === selectedPackageId
+    ) || null,
     [packageOptions, selectedPackageId]
   );
 

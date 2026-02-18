@@ -49,6 +49,11 @@ const groupsFallback = {
     esimOrderStatus: "eSIM holati",
     esimsOrdered: "eSIMs ordered",
     esimsNotOrdered: "eSIMs not ordered",
+    groupStatus: {
+      draft: "Draft",
+      ready: "Ready",
+      archived: "Archived"
+    },
     unknown: "Belgilanmagan"
   },
   form: {
@@ -183,6 +188,7 @@ function GroupsPage() {
       const packagePatch = hasSelectedPackage
         ? {
           packageId: selectedPackage.id,
+          packageCode: selectedPackage.packageCode || selectedPackage.id,
           packageName: selectedPackage.name,
           packageDestination: selectedPackage.destination,
           packageCountryCode: selectedPackage.countryCode,
@@ -197,6 +203,7 @@ function GroupsPage() {
         }
         : {
           packageId: "",
+          packageCode: "",
           packageName: "",
           packageDestination: "",
           packageCountryCode: "",

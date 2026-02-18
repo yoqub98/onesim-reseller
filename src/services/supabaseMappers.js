@@ -139,6 +139,18 @@ export function mapOrderRowToPortalOrder(row, packageRecord, options = {}) {
   const usedBytes = asNumber(row?.order_usage, 0);
   const totalBytes = asNumber(row?.total_volume, 0);
   const amountUsd = asNumber(row?.partner_paid_usd ?? row?.price_usd, 0);
+  const deliveryLogs = Array.isArray(row?.esim_delivery_logs)
+    ? row.esim_delivery_logs
+    : row?.esim_delivery_logs
+      ? [row.esim_delivery_logs]
+      : [];
+  const latestDeliveryLog = deliveryLogs
+    .filter(Boolean)
+    .sort((a, b) => new Date(b?.created_at || 0).getTime() - new Date(a?.created_at || 0).getTime())[0];
+  const deliveredAt =
+    toIsoDate(latestDeliveryLog?.delivered_at)
+    || toIsoDate(latestDeliveryLog?.sent_at)
+    || toIsoDate(row?.email_sent_at);
 
   return {
     id: row?.order_no || row?.id || "",
@@ -158,7 +170,7 @@ export function mapOrderRowToPortalOrder(row, packageRecord, options = {}) {
     timeline: {
       createdAt: toIsoDate(row?.created_at),
       paymentClearedAt: toIsoDate(row?.created_at),
-      deliveredAt: toIsoDate(row?.email_sent_at),
+      deliveredAt,
       activatedAt: toIsoDate(row?.activation_date),
       lastSyncAt: toIsoDate(row?.updated_at)
     },

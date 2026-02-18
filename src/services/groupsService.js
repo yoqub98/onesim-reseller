@@ -1,10 +1,57 @@
-import {
-  DELIVERY_SMS
-} from "../constants/delivery";
+import { DELIVERY_SMS } from "../constants/delivery";
 import { supabase } from "../lib/supabase";
 
 const FALLBACK_EMAIL_DOMAIN = "onesim.group.local";
 const GROUP_TAG_PREFIX = "group_";
+
+const GROUP_STATUS_DRAFT = "draft";
+const GROUP_STATUS_READY = "ready";
+const GROUP_STATUS_ARCHIVED = "archived";
+
+const GROUP_ROW_SELECT_VARIANTS = [
+  `
+    id,
+    name,
+    destination_name,
+    destination_country_code,
+    travel_start_date,
+    travel_end_date,
+    group_size,
+    status,
+    default_package_code,
+    default_package_name,
+    default_delivery_method,
+    tags,
+    created_at
+  `,
+  `
+    id,
+    name,
+    destination_country_code,
+    travel_start_date,
+    travel_end_date,
+    group_size,
+    status,
+    default_package_code,
+    default_package_name,
+    default_delivery_method,
+    tags,
+    created_at
+  `,
+  `
+    id,
+    name,
+    destination_country_code,
+    travel_start_date,
+    travel_end_date,
+    group_size,
+    status,
+    default_package_code,
+    default_package_name,
+    default_delivery_method,
+    created_at
+  `
+];
 
 function asPlainObject(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
@@ -33,6 +80,22 @@ function normalizeEmail(value) {
   return String(value || "")
     .trim()
     .toLowerCase();
+}
+
+function normalizeDeliveryMethod(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (normalized === "email" || normalized === "manual" || normalized === "sms") {
+    return normalized;
+  }
+  return DELIVERY_SMS;
+}
+
+function normalizeGroupStatus(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (normalized === GROUP_STATUS_DRAFT || normalized === GROUP_STATUS_READY || normalized === GROUP_STATUS_ARCHIVED) {
+    return normalized;
+  }
+  return GROUP_STATUS_DRAFT;
 }
 
 function splitName(fullName) {
@@ -108,49 +171,12 @@ function createGroupCode(id) {
   return `GRP-${compact || "UNKNOWN"}`;
 }
 
-function mergeGroupTags(existingTags, patch = {}) {
-  const prev = asPlainObject(existingTags);
-  const prevPackage = asPlainObject(prev[`${GROUP_TAG_PREFIX}package`]);
-  const hasPackageId = Object.prototype.hasOwnProperty.call(patch, "packageId");
-  const packagePayload = hasPackageId
-    ? (patch?.packageId
-      ? {
-        id: patch.packageId,
-        name: patch.packageName ?? prevPackage.name ?? "",
-        destination: patch.packageDestination ?? prevPackage.destination ?? "",
-        countryCode: patch.packageCountryCode ?? prevPackage.countryCode ?? "",
-        dataLabel: patch.packageDataLabel ?? prevPackage.dataLabel ?? "",
-        validityDays: patch.packageValidityDays ?? prevPackage.validityDays ?? 0,
-        resellerPriceUzs: patch.packageResellerPriceUzs ?? prevPackage.resellerPriceUzs ?? 0,
-        resellerPriceUsd: patch.packageResellerPriceUsd ?? prevPackage.resellerPriceUsd ?? 0
-      }
-      : null)
-    : undefined;
-
-  const merged = {
-    ...prev,
-    [`${GROUP_TAG_PREFIX}delivery_method`]: patch.deliveryMethod ?? prev[`${GROUP_TAG_PREFIX}delivery_method`] ?? DELIVERY_SMS,
-    [`${GROUP_TAG_PREFIX}delivery_time`]: patch.deliveryTime ?? prev[`${GROUP_TAG_PREFIX}delivery_time`] ?? "now",
-    [`${GROUP_TAG_PREFIX}package_status`]: patch.packageStatus ?? prev[`${GROUP_TAG_PREFIX}package_status`] ?? "unassigned",
-    [`${GROUP_TAG_PREFIX}esim_order_status`]: patch.esimOrderStatus ?? prev[`${GROUP_TAG_PREFIX}esim_order_status`] ?? "not_ordered",
-    [`${GROUP_TAG_PREFIX}package_scheduled_at`]: patch.packageScheduledAt ?? prev[`${GROUP_TAG_PREFIX}package_scheduled_at`] ?? null,
-    [`${GROUP_TAG_PREFIX}package_label`]: patch.packageLabel ?? prev[`${GROUP_TAG_PREFIX}package_label`] ?? "",
-    [`${GROUP_TAG_PREFIX}package`]:
-      packagePayload === undefined
-        ? (prev[`${GROUP_TAG_PREFIX}package`] ?? null)
-        : packagePayload
-  };
-
-  return merged;
-}
-
 function readGroupTags(tags) {
   const safeTags = asPlainObject(tags);
   const pkg = asPlainObject(safeTags[`${GROUP_TAG_PREFIX}package`]);
 
   return {
     deliveryMethod: safeTags[`${GROUP_TAG_PREFIX}delivery_method`] || DELIVERY_SMS,
-    deliveryTime: safeTags[`${GROUP_TAG_PREFIX}delivery_time`] || "now",
     packageStatus: safeTags[`${GROUP_TAG_PREFIX}package_status`] || "unassigned",
     esimOrderStatus: safeTags[`${GROUP_TAG_PREFIX}esim_order_status`] || "not_ordered",
     packageScheduledAt: toIsoOrNull(safeTags[`${GROUP_TAG_PREFIX}package_scheduled_at`]),
@@ -175,7 +201,57 @@ function mapCustomerRowToMember(row) {
   };
 }
 
-function mapGroupRowsToUi(groupsRows = [], memberRows = []) {
+function mapGroupOrderStatusToUi(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (normalized === "completed") {
+    return "ordered";
+  }
+  if (normalized === "failed") {
+    return "failed";
+  }
+  if (normalized === "paid" || normalized === "api_ordering") {
+    return "ordering";
+  }
+  return "not_ordered";
+}
+
+function inferGroupStatus(packageCode) {
+  return packageCode ? GROUP_STATUS_READY : GROUP_STATUS_DRAFT;
+}
+
+function resolvePackageCode(input = {}, fallback = "") {
+  const candidates = [input.packageCode, input.defaultPackageCode, input.packageId, fallback];
+  for (const candidate of candidates) {
+    const value = String(candidate || "").trim();
+    if (value) return value;
+  }
+  return "";
+}
+
+function resolvePackageName(input = {}, fallback = "") {
+  const candidates = [input.packageName, input.defaultPackageName, input.packageLabel, fallback];
+  for (const candidate of candidates) {
+    const value = String(candidate || "").trim();
+    if (value) return value;
+  }
+  return "";
+}
+
+function isMissingColumnError(error) {
+  const message = String(error?.message || "");
+  return /column .* does not exist/i.test(message) || /could not find the '.*' column/i.test(message);
+}
+
+function isMissingRelationError(error, relationName) {
+  const message = String(error?.message || "");
+  const relationLower = String(relationName || "").toLowerCase();
+  return (
+    new RegExp(`relation ['"]?${relationLower}['"]? does not exist`, "i").test(message)
+    || new RegExp(`could not find the table ['"]?${relationLower}['"]?`, "i").test(message)
+  );
+}
+
+function mapGroupRowsToUi(groupsRows = [], memberRows = [], latestGroupOrderByGroupId = new Map()) {
   const membersByGroupId = new Map();
 
   for (const row of memberRows) {
@@ -196,28 +272,42 @@ function mapGroupRowsToUi(groupsRows = [], memberRows = []) {
   return groupsRows.map((row) => {
     const groupTags = readGroupTags(row.tags);
     const packageMeta = asPlainObject(groupTags.package);
+    const packageCode = row.default_package_code || packageMeta.id || "";
+    const packageName = row.default_package_name || packageMeta.name || "";
     const packageLabel =
-      groupTags.packageLabel
+      packageName
+      || groupTags.packageLabel
       || (packageMeta.id
         ? `${packageMeta.name || "Package"} (${packageMeta.dataLabel || "-"} / ${packageMeta.validityDays || 0} kun)`
         : "");
+    const latestGroupOrder = latestGroupOrderByGroupId.get(row.id);
+    const orderStatus = mapGroupOrderStatusToUi(latestGroupOrder?.status);
+    const packageScheduledAt =
+      toIsoOrNull(latestGroupOrder?.ordered_at)
+      || toIsoOrNull(latestGroupOrder?.paid_at)
+      || toIsoOrNull(latestGroupOrder?.created_at)
+      || groupTags.packageScheduledAt
+      || null;
 
     return {
       id: row.id,
       code: createGroupCode(row.id),
       name: row.name || "Yangi guruh",
-      destination: row.destination_name || packageMeta.destination || "",
+      destination: row.destination_name || packageMeta.destination || row.destination_country_code || "",
       destinationCountryCode: normalizeCode(row.destination_country_code || packageMeta.countryCode || ""),
       travelStartDate: row.travel_start_date || null,
       travelEndDate: row.travel_end_date || null,
-      packageId: packageMeta.id || "",
+      status: normalizeGroupStatus(row.status || inferGroupStatus(packageCode)),
+      packageId: packageCode,
+      packageCode,
+      packageName,
       packageLabel,
-      packageStatus: groupTags.packageStatus || "unassigned",
-      esimOrderStatus: groupTags.esimOrderStatus || "not_ordered",
-      packageScheduledAt: groupTags.packageScheduledAt || null,
+      packageStatus: packageCode ? "assigned" : groupTags.packageStatus || "unassigned",
+      esimOrderStatus: orderStatus || groupTags.esimOrderStatus || "not_ordered",
+      packageScheduledAt,
       members: membersByGroupId.get(row.id) || [],
-      deliveryMethod: groupTags.deliveryMethod || DELIVERY_SMS,
-      deliveryTime: groupTags.deliveryTime || "now"
+      deliveryMethod: normalizeDeliveryMethod(row.default_delivery_method || groupTags.deliveryMethod),
+      deliveryTime: "now"
     };
   });
 }
@@ -246,32 +336,65 @@ async function resolvePartnerId() {
   return partnerRow.id;
 }
 
-async function fetchGroupsInternal(partnerId, groupId) {
-  let query = supabase
-    .from("customer_groups")
-    .select(`
-      id,
-      name,
-      destination_name,
-      destination_country_code,
-      travel_start_date,
-      travel_end_date,
-      tags,
-      is_active,
-      created_at
-    `)
+async function fetchGroupRows(partnerId, groupId) {
+  let lastError = null;
+
+  for (const selectColumns of GROUP_ROW_SELECT_VARIANTS) {
+    let query = supabase
+      .from("customer_groups")
+      .select(selectColumns)
+      .eq("partner_id", partnerId)
+      .order("created_at", { ascending: false });
+
+    if (groupId) {
+      query = query.eq("id", groupId);
+    }
+
+    const { data, error } = await query;
+    if (!error) {
+      return data || [];
+    }
+
+    lastError = error;
+    if (!isMissingColumnError(error)) {
+      break;
+    }
+  }
+
+  throw new Error(`Guruhlarni yuklab bo'lmadi: ${lastError?.message || "unknown error"}`);
+}
+
+async function fetchLatestGroupOrders(partnerId, groupIds = []) {
+  if (!groupIds.length) {
+    return new Map();
+  }
+
+  const { data, error } = await supabase
+    .from("group_orders")
+    .select("id, customer_group_id, status, created_at, paid_at, ordered_at")
     .eq("partner_id", partnerId)
-    .eq("is_active", true)
+    .in("customer_group_id", groupIds)
     .order("created_at", { ascending: false });
 
-  if (groupId) {
-    query = query.eq("id", groupId);
+  if (error) {
+    if (isMissingRelationError(error, "group_orders")) {
+      return new Map();
+    }
+    throw new Error(`Guruh buyurtmalarini yuklab bo'lmadi: ${error.message}`);
   }
 
-  const { data: groupsRows, error: groupsError } = await query;
-  if (groupsError) {
-    throw new Error(`Guruhlarni yuklab bo'lmadi: ${groupsError.message}`);
+  const latestByGroupId = new Map();
+  for (const row of data || []) {
+    if (!row?.customer_group_id) continue;
+    if (latestByGroupId.has(row.customer_group_id)) continue;
+    latestByGroupId.set(row.customer_group_id, row);
   }
+
+  return latestByGroupId;
+}
+
+async function fetchGroupsInternal(partnerId, groupId) {
+  const groupsRows = await fetchGroupRows(partnerId, groupId);
 
   const groupIds = (groupsRows || []).map((row) => row.id);
   if (!groupIds.length) {
@@ -298,7 +421,14 @@ async function fetchGroupsInternal(partnerId, groupId) {
     throw new Error(`Guruh mijozlarini yuklab bo'lmadi: ${membersError.message}`);
   }
 
-  return mapGroupRowsToUi(groupsRows || [], memberRows || []);
+  const latestGroupOrderByGroupId = await fetchLatestGroupOrders(partnerId, groupIds);
+  const groups = mapGroupRowsToUi(groupsRows || [], memberRows || [], latestGroupOrderByGroupId);
+
+  if (groupId) {
+    return groups;
+  }
+
+  return groups.filter((group) => group.status !== GROUP_STATUS_ARCHIVED);
 }
 
 async function upsertMembersAndLinks(partnerId, groupId, members) {
@@ -373,7 +503,9 @@ function applySearch(groups, query) {
       group.code,
       group.destination,
       group.destinationCountryCode,
+      group.status,
       group.packageLabel,
+      group.packageCode,
       group.deliveryMethod,
       ...(group.members || []).flatMap((member) => [member.name, member.phone, member.email])
     ]
@@ -395,39 +527,25 @@ export const groupsService = {
   async createGroup(payload) {
     const partnerId = await resolvePartnerId();
     const members = normalizeMembers(payload?.members);
-    const nowIso = new Date().toISOString();
-    const tags = mergeGroupTags({}, {
-      deliveryMethod: payload?.deliveryMethod || DELIVERY_SMS,
-      deliveryTime: payload?.deliveryTime || "now",
-      packageId: payload?.packageId || "",
-      packageLabel: payload?.packageLabel || "",
-      packageStatus: payload?.packageStatus || "unassigned",
-      esimOrderStatus: payload?.esimOrderStatus || "not_ordered",
-      packageScheduledAt: payload?.packageScheduledAt || null,
-      packageName: payload?.packageName || "",
-      packageDestination: payload?.packageDestination || "",
-      packageCountryCode: payload?.packageCountryCode || "",
-      packageDataLabel: payload?.packageDataLabel || "",
-      packageValidityDays: payload?.packageValidityDays || 0,
-      packageResellerPriceUzs: payload?.packageResellerPriceUzs || 0,
-      packageResellerPriceUsd: payload?.packageResellerPriceUsd || 0
-    });
+    const packageCode = resolvePackageCode(payload);
+    const packageName = resolvePackageName(payload);
+    const status = normalizeGroupStatus(payload?.status || inferGroupStatus(packageCode));
 
     const { data: createdRow, error: createError } = await supabase
       .from("customer_groups")
       .insert({
         partner_id: partnerId,
         name: payload?.name?.trim() || "Yangi guruh",
-        destination_name: payload?.destination?.trim() || "Belgilanmagan",
-        destination_country_code: normalizeCode(payload?.destinationCountryCode),
+        destination_country_code: normalizeCode(
+          payload?.destinationCountryCode || payload?.destination
+        ) || null,
         travel_start_date: toDateOrNull(payload?.travelStartDate),
         travel_end_date: toDateOrNull(payload?.travelEndDate),
         group_size: members.length,
-        tags: {
-          ...tags,
-          [`${GROUP_TAG_PREFIX}created_at`]: nowIso
-        },
-        is_active: true
+        status,
+        default_package_code: packageCode || null,
+        default_package_name: packageName || null,
+        default_delivery_method: normalizeDeliveryMethod(payload?.deliveryMethod)
       })
       .select("id")
       .single();
@@ -453,44 +571,20 @@ export const groupsService = {
       throw new Error("Guruh topilmadi");
     }
 
-    const { data: currentGroupRow, error: currentGroupError } = await supabase
-      .from("customer_groups")
-      .select("tags")
-      .eq("id", groupId)
-      .eq("partner_id", partnerId)
-      .single();
-
-    if (currentGroupError) {
-      throw new Error(`Guruh holatini o'qib bo'lmadi: ${currentGroupError.message}`);
-    }
-
-    const nextTags = mergeGroupTags(currentGroupRow?.tags, {
-      deliveryMethod: patch?.deliveryMethod ?? existingGroup.deliveryMethod,
-      deliveryTime: patch?.deliveryTime ?? existingGroup.deliveryTime,
-      packageId: patch?.packageId ?? existingGroup.packageId,
-      packageLabel: patch?.packageLabel ?? existingGroup.packageLabel,
-      packageStatus: patch?.packageStatus ?? existingGroup.packageStatus,
-      esimOrderStatus: patch?.esimOrderStatus ?? existingGroup.esimOrderStatus,
-      packageScheduledAt: patch?.packageScheduledAt ?? existingGroup.packageScheduledAt,
-      packageName: patch?.packageName,
-      packageDestination: patch?.packageDestination,
-      packageCountryCode: patch?.packageCountryCode,
-      packageDataLabel: patch?.packageDataLabel,
-      packageValidityDays: patch?.packageValidityDays,
-      packageResellerPriceUzs: patch?.packageResellerPriceUzs,
-      packageResellerPriceUsd: patch?.packageResellerPriceUsd
-    });
-
+    const packageCode = resolvePackageCode(patch, existingGroup.packageCode || existingGroup.packageId || "");
+    const packageName = resolvePackageName(patch, existingGroup.packageName || existingGroup.packageLabel || "");
     const nextMembers = Array.isArray(patch?.members) ? normalizeMembers(patch.members) : null;
 
     const { error: updateError } = await supabase
       .from("customer_groups")
       .update({
         name: patch?.name?.trim() || existingGroup.name,
-        destination_name: patch?.destination?.trim() || existingGroup.destination,
         destination_country_code: normalizeCode(
-          patch?.destinationCountryCode ?? existingGroup.destinationCountryCode
-        ),
+          patch?.destinationCountryCode
+          ?? patch?.destination
+          ?? existingGroup.destinationCountryCode
+          ?? existingGroup.destination
+        ) || null,
         travel_start_date: patch?.travelStartDate !== undefined
           ? toDateOrNull(patch.travelStartDate)
           : toDateOrNull(existingGroup.travelStartDate),
@@ -498,7 +592,10 @@ export const groupsService = {
           ? toDateOrNull(patch.travelEndDate)
           : toDateOrNull(existingGroup.travelEndDate),
         group_size: nextMembers ? nextMembers.length : (existingGroup.members?.length || 0),
-        tags: nextTags
+        status: normalizeGroupStatus(patch?.status || inferGroupStatus(packageCode)),
+        default_package_code: packageCode || null,
+        default_package_name: packageName || null,
+        default_delivery_method: normalizeDeliveryMethod(patch?.deliveryMethod ?? existingGroup.deliveryMethod)
       })
       .eq("id", groupId)
       .eq("partner_id", partnerId);
@@ -528,7 +625,7 @@ export const groupsService = {
     const partnerId = await resolvePartnerId();
     const { error } = await supabase
       .from("customer_groups")
-      .update({ is_active: false })
+      .update({ status: GROUP_STATUS_ARCHIVED })
       .eq("id", groupId)
       .eq("partner_id", partnerId);
 

@@ -36,6 +36,16 @@ function GroupCard({ group, t, deliveryIcon: DeliveryIcon, onEdit, onDelete, onO
   const esimOrderStatusLabel = isEsimOrdered
     ? (t.labels.esimsOrdered || "eSIMs ordered")
     : (t.labels.esimsNotOrdered || "eSIMs not ordered");
+  const groupStatus = String(group.status || "draft").toLowerCase();
+  const groupStatusLabel =
+    t?.labels?.groupStatus?.[groupStatus]
+    || (groupStatus === "ready" ? "Ready" : groupStatus === "archived" ? "Archived" : "Draft");
+  const groupStatusVisual =
+    groupStatus === "ready"
+      ? { bg: "#dcfce7", color: "#166534" }
+      : groupStatus === "archived"
+        ? { bg: "#f1f5f9", color: "#475569" }
+        : { bg: "#fef3c7", color: "#92400e" };
 
   return (
     <SurfaceCard
@@ -54,6 +64,9 @@ function GroupCard({ group, t, deliveryIcon: DeliveryIcon, onEdit, onDelete, onO
             <HStack spacing={2} mt={2} align="center">
               <Badge bg={uiColors.surfaceSoft} color="#45556c" fontWeight="600" borderRadius="4px" px={2} py={0.5}>
                 ID: {group.code || group.id.slice(0, 8)}
+              </Badge>
+              <Badge bg={groupStatusVisual.bg} color={groupStatusVisual.color} fontWeight="600" borderRadius="999px" px={2} py={0.5}>
+                {groupStatusLabel}
               </Badge>
               <Text color={uiColors.textSecondary} fontSize="sm">•</Text>
               <Text color={uiColors.textSecondary} fontSize="sm">{group.destination || t.labels.unknown}</Text>
