@@ -1,7 +1,7 @@
-// Renders the destination and package filter controls — used in CatalogPage
+// Renders the catalog filter controls — used in CatalogPage
 import { FunnelIcon } from "@heroicons/react/24/outline";
 import { Box, Grid, HStack, Text } from "@chakra-ui/react";
-import { AppCombobox, AppSelect, FilterChips, SurfaceCard } from "../ui";
+import { AppCombobox, AppMultiSelect, AppSelect, SurfaceCard } from "../ui";
 import { uiColors } from "../../design-system/tokens";
 
 function CatalogFilters({
@@ -14,9 +14,6 @@ function CatalogFilters({
   dayFilterOptions,
   onChange
 }) {
-  const locationTypeLabel = t.filters.locationType || "Location type";
-  const packageTypeLabel = t.filters.packageType || "Package type";
-
   return (
     <SurfaceCard p={{ base: 4, md: 5 }}>
       <HStack mb={3} spacing={2} color={uiColors.textPrimary}>
@@ -24,7 +21,7 @@ function CatalogFilters({
         <Text fontWeight="600">{t.filtersTitle}</Text>
       </HStack>
 
-      <Grid templateColumns={{ base: "1fr", lg: "1.1fr 1fr 1fr" }} gap={4}>
+      <Grid templateColumns={{ base: "1fr", md: "1fr 1fr", lg: "1fr 1fr 1fr 1fr 1fr" }} gap={3}>
         <Box>
           <Text fontSize="xs" color={uiColors.textSecondary} mb={1.5}>
             {t.filters.destination}
@@ -40,7 +37,7 @@ function CatalogFilters({
 
         <Box>
           <Text fontSize="xs" color={uiColors.textSecondary} mb={1.5}>
-            {locationTypeLabel}
+            {t.filters.locationType}
           </Text>
           <AppSelect
             value={filters.locationType}
@@ -56,7 +53,7 @@ function CatalogFilters({
 
         <Box>
           <Text fontSize="xs" color={uiColors.textSecondary} mb={1.5}>
-            {packageTypeLabel}
+            {t.filters.packageType}
           </Text>
           <AppSelect
             value={filters.packageType}
@@ -69,17 +66,16 @@ function CatalogFilters({
             ))}
           </AppSelect>
         </Box>
-      </Grid>
 
-      <Grid templateColumns={{ base: "1fr", lg: "1fr 1fr" }} gap={4} mt={4}>
         <Box>
           <Text fontSize="xs" color={uiColors.textSecondary} mb={1.5}>
             {t.filters.gb}
           </Text>
-          <FilterChips
+          <AppMultiSelect
             value={filters.data}
             options={dataFilterOptions}
-            onChange={(value) => onChange({ data: value })}
+            onChange={(values) => onChange({ data: values })}
+            allLabel={t.units.all}
           />
         </Box>
 
@@ -87,10 +83,11 @@ function CatalogFilters({
           <Text fontSize="xs" color={uiColors.textSecondary} mb={1.5}>
             {t.filters.days}
           </Text>
-          <FilterChips
+          <AppMultiSelect
             value={filters.days}
             options={dayFilterOptions}
-            onChange={(value) => onChange({ days: value })}
+            onChange={(values) => onChange({ days: values })}
+            allLabel={t.units.all}
           />
         </Box>
       </Grid>

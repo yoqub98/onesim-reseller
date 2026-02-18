@@ -41,13 +41,16 @@ const uz = {
     filtersTitle: "Filterlar",
     filters: {
       destination: "Davlat",
-      gb: "Internet Hajmi",
-      days: "Amal qilish muddati (Kun)",
-      search: "Reja yoki davlat bo'yicha qidirish"
+      locationType: "Qamrov turi",
+      packageType: "Paket turi",
+      gb: "Internet hajmi",
+      days: "Muddat (kun)",
+      search: "Davlat bo'yicha qidirish"
     },
     table: {
-      package: "Paket Nomi",
+      package: "Paket nomi",
       price: "Narxi",
+      data: "Trafik miqdori",
       validity: "Muddat",
       speed: "Tezlik",
       actions: "Amallar"
@@ -56,7 +59,12 @@ const uz = {
       all: "Barchasi",
       day: "Kun",
       days: "Kun",
-      unlimited: "Cheksiz"
+      unlimited: "Cheksiz",
+      country: "Bitta davlat",
+      regional: "Mintaqaviy",
+      global: "Global",
+      standard: "Standart",
+      daily: "Kunlik"
     },
     coverage: "Qamrov",
     details: "Batafsil",

@@ -41,13 +41,16 @@ const ru = {
     filtersTitle: "Фильтры",
     filters: {
       destination: "Страна",
-      gb: "Объем интернета",
-      days: "Срок действия (дни)",
-      search: "Поиск по плану или стране"
+      locationType: "Тип покрытия",
+      packageType: "Тип пакета",
+      gb: "Объём интернета",
+      days: "Срок (дни)",
+      search: "Поиск по стране"
     },
     table: {
       package: "Название пакета",
       price: "Цена",
+      data: "Объём трафика",
       validity: "Срок",
       speed: "Скорость",
       actions: "Действия"
@@ -56,7 +59,12 @@ const ru = {
       all: "Все",
       day: "дн.",
       days: "дней",
-      unlimited: "Безлимит"
+      unlimited: "Безлимит",
+      country: "Одна страна",
+      regional: "Региональный",
+      global: "Глобальный",
+      standard: "Стандартный",
+      daily: "Дневной"
     },
     coverage: "Покрытие",
     details: "Подробнее",

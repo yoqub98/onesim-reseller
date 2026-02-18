@@ -60,14 +60,14 @@ function PlanCardGrid({
     <VStack spacing={4} align="stretch">
       <SurfaceCard overflow="hidden" opacity={isLoading ? 0.5 : 1} transition="opacity 0.15s">
         <AppDataTable
-          minWidth="920px"
-          columns="2.2fr 1.4fr 1fr 1fr 1.6fr"
-          headers={[t.table.package, t.table.price, t.table.validity, t.table.speed, t.table.actions]}
+          minWidth="1020px"
+          columns="2.2fr 1.4fr 0.8fr 0.8fr 0.8fr 1.6fr"
+          headers={[t.table.package, t.table.price, t.table.data, t.table.validity, t.table.speed, t.table.actions]}
         >
           {plans.map((plan) => (
             <AppDataTableRow
               key={plan.id}
-              columns="2.2fr 1.4fr 1fr 1fr 1.6fr"
+              columns="2.2fr 1.4fr 0.8fr 0.8fr 0.8fr 1.6fr"
               cursor="pointer"
               _hover={{ bg: "#f8fafc" }}
               onClick={() => onOpenDetails(plan)}
@@ -87,6 +87,12 @@ function PlanCardGrid({
                 </Text>
                 <Text color={uiColors.textPrimary} fontSize="md" fontWeight="700">
                   {renderResellerPrice(plan)}
+                </Text>
+              </AppDataTableCell>
+
+              <AppDataTableCell>
+                <Text color={uiColors.textPrimary} fontSize="sm" fontWeight="600">
+                  {formatPackageDataLabel(plan, t.units.unlimited)}
                 </Text>
               </AppDataTableCell>
 

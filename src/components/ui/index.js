@@ -1,6 +1,7 @@
 export { AppButton, AppIconButton } from "./AppButton";
 export { default as AppCombobox } from "./AppCombobox";
 export { AppInput } from "./AppInput";
+export { default as AppMultiSelect } from "./AppMultiSelect";
 export { FilterChips, SegmentedControl } from "./FilterChips";
 export { default as AppSelect } from "./AppSelect";
 export { default as SurfaceCard } from "./SurfaceCard";

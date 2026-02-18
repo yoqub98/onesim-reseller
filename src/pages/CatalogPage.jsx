@@ -17,13 +17,27 @@ import { formatMoneyFromUsd } from "../utils/currency";
 const EMPTY_LIST = [];
 const PAGE_SIZE = 15;
 
-const dataFilterOptionsBase = [
-  { value: "all", label: "all" },
-  { value: "upTo1", label: "<=1GB" },
-  { value: "1to5", label: "1-5GB" },
-  { value: "5to10", label: "5-10GB" },
-  { value: "10to20", label: "10-20GB" },
-  { value: "20plus", label: "20GB+" }
+const DATA_OPTIONS = [
+  { value: "0.5", label: "500MB" },
+  { value: "1", label: "1GB" },
+  { value: "2", label: "2GB" },
+  { value: "3", label: "3GB" },
+  { value: "5", label: "5GB" },
+  { value: "10", label: "10GB" },
+  { value: "15", label: "15GB" },
+  { value: "20", label: "20GB" },
+  { value: "30", label: "30GB" }
+];
+
+const DAY_OPTIONS = [
+  { value: "1", label: "1" },
+  { value: "3", label: "3" },
+  { value: "5", label: "5" },
+  { value: "7", label: "7" },
+  { value: "10", label: "10" },
+  { value: "15", label: "15" },
+  { value: "20", label: "20" },
+  { value: "30", label: "30" }
 ];
 
 let customerCounter = 0;
@@ -68,14 +82,13 @@ function CatalogPage() {
 
   // Filter options loaded once
   const [destinationOptions, setDestinationOptions] = useState([]);
-  const [dayFilterOptions, setDayFilterOptions] = useState([]);
 
   const { fields: filters, setField } = useFormFields({
     destination: "all",
     locationType: "all",
     packageType: "all",
-    data: "all",
-    days: "all"
+    data: [],
+    days: []
   });
 
   // Abort controller ref for cancelling in-flight requests
@@ -86,14 +99,12 @@ function CatalogPage() {
     let mounted = true;
     async function loadStaticData() {
       try {
-        const [destinations, durations, groupsList] = await Promise.all([
+        const [destinations, groupsList] = await Promise.all([
           catalogService.getDestinations(),
-          catalogService.getDurations(),
           groupsService.listGroups()
         ]);
         if (!mounted) return;
         setDestinationOptions(destinations);
-        setDayFilterOptions(durations);
         setGroups(groupsList);
       } catch {
         // static data failure is non-critical
@@ -152,35 +163,26 @@ function CatalogPage() {
   const locationTypeOptions = useMemo(
     () => [
       { value: "all", label: t.units.all },
-      { value: "country", label: "Country" },
-      { value: "regional", label: "Regional" },
-      { value: "global", label: "Global" }
+      { value: "country", label: t.units.country },
+      { value: "regional", label: t.units.regional },
+      { value: "global", label: t.units.global }
     ],
-    [t.units.all]
+    [t.units]
   );
 
   const packageTypeOptions = useMemo(
     () => [
       { value: "all", label: t.units.all },
-      { value: "standard", label: "Standard" },
-      { value: "daily", label: "Daily" }
+      { value: "standard", label: t.units.standard },
+      { value: "daily", label: t.units.daily }
     ],
-    [t.units.all]
+    [t.units]
   );
 
-  const dataFilterOptions = useMemo(
-    () =>
-      dataFilterOptionsBase.map((option) => ({
-        ...option,
-        label: option.value === "all" ? t.units.all : option.label
-      })),
-    [t.units.all]
+  const dayFilterOptionsMemo = useMemo(
+    () => DAY_OPTIONS.map((opt) => ({ ...opt, label: `${opt.label} ${t.units.day}` })),
+    [t.units.day]
   );
-
-  const dayFilterOptionsMemo = useMemo(() => [
-    { value: "all", label: t.units.all },
-    ...dayFilterOptions.map((value) => ({ value: String(value), label: `${value} ${t.units.day}` }))
-  ], [dayFilterOptions, t.units.all, t.units.day]);
 
   const renderOriginalPrice = useCallback(
     (plan) => formatMoneyFromUsd(plan.originalPriceUsd || 0, currency),
@@ -285,7 +287,7 @@ function CatalogPage() {
         destinationOptions={destinationOptions}
         locationTypeOptions={locationTypeOptions}
         packageTypeOptions={packageTypeOptions}
-        dataFilterOptions={dataFilterOptions}
+        dataFilterOptions={DATA_OPTIONS}
         dayFilterOptions={dayFilterOptionsMemo}
         onChange={(patch) => {
           const [key, value] = Object.entries(patch)[0];

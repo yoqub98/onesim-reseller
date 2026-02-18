@@ -45,22 +45,11 @@ function applyFilters(query, filters) {
       query = query.neq("data_type", 2);
     }
   }
-  if (filters.data && filters.data !== "all") {
-    const bucket = filters.data;
-    if (bucket === "upTo1") {
-      query = query.lte("data_gb", 1);
-    } else if (bucket === "1to5") {
-      query = query.gt("data_gb", 1).lte("data_gb", 5);
-    } else if (bucket === "5to10") {
-      query = query.gt("data_gb", 5).lte("data_gb", 10);
-    } else if (bucket === "10to20") {
-      query = query.gt("data_gb", 10).lte("data_gb", 20);
-    } else if (bucket === "20plus") {
-      query = query.gte("data_gb", 20);
-    }
+  if (Array.isArray(filters.data) && filters.data.length > 0) {
+    query = query.in("data_gb", filters.data.map(Number));
   }
-  if (filters.days && filters.days !== "all") {
-    query = query.eq("duration", Number(filters.days));
+  if (Array.isArray(filters.days) && filters.days.length > 0) {
+    query = query.in("duration", filters.days.map(Number));
   }
   return query;
 }
@@ -93,8 +82,7 @@ export const catalogService = {
     query = applyFilters(query, filters);
 
     query = query
-      .order("location_type", { ascending: true })
-      .order("location_code", { ascending: true })
+      .order("name", { ascending: true })
       .order("duration", { ascending: true })
       .order("data_gb", { ascending: true })
       .range(from, to);
@@ -164,31 +152,5 @@ export const catalogService = {
     return [...seen.entries()]
       .map(([value, label]) => ({ value, label }))
       .sort((a, b) => a.label.localeCompare(b.label));
-  },
-
-  /**
-   * Fetches distinct duration values for the days filter chips.
-   * @returns {Promise<number[]>}
-   */
-  async getDurations() {
-    const { data, error } = await supabase
-      .from("esim_packages")
-      .select("duration")
-      .eq("is_active", true)
-      .eq("is_hidden", false)
-      .order("duration", { ascending: true })
-      .limit(1000);
-
-    if (error) {
-      throw new Error(`Failed to load durations: ${error.message}`);
-    }
-
-    const rows = data || [];
-    const unique = [...new Set(rows.map((r) => r.duration).filter((v) => v != null))]
-      .map(Number)
-      .filter((v) => Number.isFinite(v) && v >= 0)
-      .sort((a, b) => a - b);
-
-    return unique;
   }
 };
