@@ -9,7 +9,7 @@ import { Box, SimpleGrid, Text, VStack } from "@chakra-ui/react";
 import { useMemo, useState } from "react";
 import AppToastStack from "../components/common/AppToastStack";
 import PageHeader from "../components/layout/PageHeader";
-import { GroupCard, GroupDetailsModal, GroupFormModal, GroupPaymentModal } from "../components/groups";
+import { GroupCard, GroupDetailsModal, GroupFormModal } from "../components/groups";
 import { AppButton, AppInput, SurfaceCard } from "../components/ui";
 import { useAuth } from "../context/AuthContext";
 import { useLocale } from "../context/LocaleContext";
@@ -33,6 +33,8 @@ const groupsFallback = {
     attachPackage: "Paket biriktirish",
     create: "Yaratish",
     save: "Saqlash",
+    saveGroup: "Сохранить группу",
+    orderEsim: "Заказать eSIM",
     close: "Yopish",
     cancel: "Bekor qilish"
   },
@@ -44,6 +46,9 @@ const groupsFallback = {
     members: "ta mijoz",
     membersList: "Guruh a'zolari",
     destination: "Davlat",
+    esimOrderStatus: "eSIM holati",
+    esimsOrdered: "eSIMs ordered",
+    esimsNotOrdered: "eSIMs not ordered",
     unknown: "Belgilanmagan"
   },
   form: {
@@ -57,12 +62,11 @@ const groupsFallback = {
     departure: "Ketish sanasi",
     return: "Qaytish sanasi",
     deliveryMethod: "eSIM yetkazib berish usuli",
-    assignPackageNow: "Yaratishda paket biriktirish",
-    assignPackageNowHelper: "Yoqilsa, saqlangandan keyin to'lov tasdiqlash oynasi ochiladi.",
     package: "Paket",
     packagePlaceholder: "Paketni tanlang",
     packageSearchPlaceholder: "Paket qidirish",
     noPackages: "Paket topilmadi",
+    noPackage: "Paket biriktirmaslik",
     customers: "Mijozlar ro'yxati",
     customerName: "Ism familiya",
     customerPhone: "Telefon raqam",
@@ -72,23 +76,15 @@ const groupsFallback = {
     smsRequired: "SMS uchun telefon majburiy",
     emailRequired: "Email uchun email majburiy",
     requiredFields: "Guruh nomi va davlat majburiy",
-    packageRequired: "Paketni tanlang yoki paket biriktirishni o'chiring"
-  },
-  payment: {
-    title: "Guruh to'lovi",
-    package: "Paket",
-    howMany: "Mijozlar soni",
-    total: "Umumiy summa",
-    totalDeducted: "Jami chegirma",
-    subtotal: "To'lov summasi",
-    payAndConfirm: "Pay and confirm"
+    packageRequired: "Zaказ eSIM uchun paket tanlang"
   },
   toast: {
     createdTitle: "Guruh yaratildi",
     updatedTitle: "Guruh yangilandi",
     deletedTitle: "Guruh o'chirildi",
     packageAttachedTitle: "Paket biriktirildi",
-    paymentConfirmedTitle: "To'lov tasdiqlandi",
+    orderNotReadyTitle: "Заказ eSIM hozircha tayyor emas",
+    orderNotReadyDescription: "Hozircha faqat guruhni saqlash ishlaydi.",
     actionDescription: "Ma'lumotlar bazasiga saqlandi"
   }
 };
@@ -137,15 +133,10 @@ function GroupsPage() {
   const { dict } = useLocale();
   const t = dict.groups || groupsFallback;
   const { toasts, pushToast } = useAppToasts();
-  const partnerDiscountRateRaw = Number(
-    partner?.effective_discount_rate ?? partner?.custom_discount_rate ?? partner?.discount_rate ?? 5
-  );
-  const partnerDiscountRate = Number.isFinite(partnerDiscountRateRaw) ? partnerDiscountRateRaw : 5;
 
   const [query, setQuery] = useState("");
   const [formModal, setFormModal] = useState({ isOpen: false, mode: "create", group: null });
   const [detailsGroup, setDetailsGroup] = useState(null);
-  const [paymentModal, setPaymentModal] = useState({ isOpen: false, payment: null });
 
   const listParams = useMemo(() => ({ query }), [query]);
   const {
@@ -188,7 +179,7 @@ function GroupsPage() {
 
     try {
       const selectedPackage = payload?.packageSelected || null;
-      const hasSelectedPackage = Boolean(payload.assignPackageNow && selectedPackage);
+      const hasSelectedPackage = Boolean(selectedPackage);
       const packagePatch = hasSelectedPackage
         ? {
           packageId: selectedPackage.id,
@@ -200,36 +191,24 @@ function GroupsPage() {
           packageResellerPriceUzs: selectedPackage.resellerPriceUzs || 0,
           packageResellerPriceUsd: selectedPackage.resellerPriceUsd || 0,
           packageLabel: `${selectedPackage.name} (${selectedPackage.dataLabel} / ${selectedPackage.validityDays} kun)`,
-          packageStatus: "scheduled",
-          packageScheduledAt: new Date().toISOString()
+          packageStatus: "assigned",
+          packageScheduledAt: new Date().toISOString(),
+          esimOrderStatus: formModal.group?.esimOrderStatus || "not_ordered"
         }
-        : payload.assignPackageNow
-          ? {
-            packageId: payload.packageId || formModal.group?.packageId || "",
-            packageName: undefined,
-            packageDestination: undefined,
-            packageCountryCode: formModal.group?.destinationCountryCode || "",
-            packageDataLabel: undefined,
-            packageValidityDays: undefined,
-            packageResellerPriceUzs: undefined,
-            packageResellerPriceUsd: undefined,
-            packageLabel: formModal.group?.packageLabel || "",
-            packageStatus: formModal.group?.packageStatus || "scheduled",
-            packageScheduledAt: formModal.group?.packageScheduledAt || new Date().toISOString()
-          }
-          : {
-            packageId: "",
-            packageName: "",
-            packageDestination: "",
-            packageCountryCode: "",
-            packageDataLabel: "",
-            packageValidityDays: 0,
-            packageResellerPriceUzs: 0,
-            packageResellerPriceUsd: 0,
-            packageLabel: "",
-            packageStatus: "unassigned",
-            packageScheduledAt: null
-          };
+        : {
+          packageId: "",
+          packageName: "",
+          packageDestination: "",
+          packageCountryCode: "",
+          packageDataLabel: "",
+          packageValidityDays: 0,
+          packageResellerPriceUzs: 0,
+          packageResellerPriceUsd: 0,
+          packageLabel: "",
+          packageStatus: "unassigned",
+          packageScheduledAt: null,
+          esimOrderStatus: "not_ordered"
+        };
 
       const cleanPayload = {
         name: payload.name,
@@ -250,30 +229,8 @@ function GroupsPage() {
         await groupsService.updateGroup(formModal.group.id, cleanPayload);
         showInfoToast(t.toast.updatedTitle);
       } else {
-        const membersCount = Math.max(payload?.members?.length || 0, 1);
-        const grossTotalUzs = (selectedPackage?.resellerPriceUzs || 0) * membersCount;
-        const deductedUzs = Math.round(grossTotalUzs * (partnerDiscountRate / 100));
-        const subtotalUzs = grossTotalUzs - deductedUzs;
-
-        const createdGroup = await groupsService.createGroup(cleanPayload);
-
-        if (payload.assignPackageNow && selectedPackage && createdGroup) {
-          setPaymentModal({
-            isOpen: true,
-            payment: {
-              groupId: createdGroup.id,
-              groupName: createdGroup.name,
-              packageName: selectedPackage.name,
-              packageMeta: `${selectedPackage.destination} - ${selectedPackage.dataLabel} - ${selectedPackage.validityDays} kun`,
-              quantity: membersCount,
-              grossTotalUzs,
-              deductedUzs,
-              subtotalUzs
-            }
-          });
-        } else {
-          showInfoToast(t.toast.createdTitle);
-        }
+        await groupsService.createGroup(cleanPayload);
+        showInfoToast(t.toast.createdTitle);
       }
 
       setFormModal({ isOpen: false, mode: "create", group: null });
@@ -281,6 +238,14 @@ function GroupsPage() {
     } catch (error) {
       showErrorToast(error?.message);
     }
+  };
+
+  const handleOrderIntent = async () => {
+    pushToast({
+      type: "info",
+      title: t.toast.orderNotReadyTitle || groupsFallback.toast.orderNotReadyTitle,
+      description: t.toast.orderNotReadyDescription || groupsFallback.toast.orderNotReadyDescription
+    });
   };
 
   const handleDeleteGroup = async (group) => {
@@ -344,11 +309,7 @@ function GroupsPage() {
                   onEdit={(item) => setFormModal({ isOpen: true, mode: "edit", group: item })}
                   onDelete={handleDeleteGroup}
                   onOpenDetails={setDetailsGroup}
-                  onAttachPackage={(item) => setFormModal({
-                    isOpen: true,
-                    mode: "edit",
-                    group: { ...item, forceAssignPackageNow: true }
-                  })}
+                  onAttachPackage={(item) => setFormModal({ isOpen: true, mode: "edit", group: item })}
                 />
               ))}
             </SimpleGrid>
@@ -368,6 +329,7 @@ function GroupsPage() {
         packageOptions={packageOptions}
         onClose={() => setFormModal({ isOpen: false, mode: "create", group: null })}
         onSubmit={handleSubmitGroup}
+        onOrderIntent={handleOrderIntent}
         onValidationError={(message) => {
           pushToast({
             type: "error",
@@ -378,25 +340,6 @@ function GroupsPage() {
       />
 
       <GroupDetailsModal group={detailsGroup} t={t} onClose={() => setDetailsGroup(null)} />
-      <GroupPaymentModal
-        isOpen={paymentModal.isOpen}
-        payment={paymentModal.payment}
-        labels={{
-          title: t.payment?.title || groupsFallback.payment.title,
-          package: t.payment?.package || groupsFallback.payment.package,
-          howMany: t.payment?.howMany || groupsFallback.payment.howMany,
-          total: t.payment?.total || groupsFallback.payment.total,
-          totalDeducted: t.payment?.totalDeducted || groupsFallback.payment.totalDeducted,
-          subtotal: t.payment?.subtotal || groupsFallback.payment.subtotal,
-          payAndConfirm: t.payment?.payAndConfirm || groupsFallback.payment.payAndConfirm,
-          close: t.actions.close
-        }}
-        onClose={() => setPaymentModal({ isOpen: false, payment: null })}
-        onConfirm={() => {
-          showInfoToast(t.toast.paymentConfirmedTitle || groupsFallback.toast.paymentConfirmedTitle);
-          setPaymentModal({ isOpen: false, payment: null });
-        }}
-      />
     </Box>
   );
 }

@@ -16,7 +16,6 @@ import {
   AppButton,
   AppIconButton,
   AppInput,
-  AppSwitch,
   PackageDisplay,
   SurfaceCard
 } from "../ui";
@@ -47,6 +46,7 @@ function PackagePickerSelect({
   placeholder,
   searchPlaceholder,
   emptyLabel,
+  clearLabel,
   onChange
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -101,20 +101,35 @@ function PackagePickerSelect({
       >
         <HStack justify="space-between" spacing={3}>
           {selectedPackage ? (
-            <PackageDisplay
-              countryCode={selectedPackage.countryCode}
-              destination={selectedPackage.destination || selectedPackage.name}
-              dataLabel={`${selectedPackage.dataLabel || "-"} - ${selectedPackage.validityDays || 0} kun`}
-              flagSize={28}
-            />
+            <HStack justify="space-between" w="full">
+              <PackageDisplay
+                countryCode={selectedPackage.countryCode}
+                destination={selectedPackage.destination || selectedPackage.name}
+                dataLabel={`${selectedPackage.dataLabel || "-"} - ${selectedPackage.validityDays || 0} kun`}
+                flagSize={28}
+              />
+              <Box
+                as="button"
+                type="button"
+                color={uiColors.textSecondary}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onChange("");
+                }}
+              >
+                <XMarkIcon width={15} />
+              </Box>
+            </HStack>
           ) : (
             <Text color={uiColors.textSecondary} fontSize="sm" textAlign="left">
               {placeholder}
             </Text>
           )}
-          <Box color={uiColors.textSecondary}>
-            <ChevronDownIcon width={16} />
-          </Box>
+          {!selectedPackage ? (
+            <Box color={uiColors.textSecondary}>
+              <ChevronDownIcon width={16} />
+            </Box>
+          ) : null}
         </HStack>
       </SurfaceCard>
 
@@ -144,6 +159,23 @@ function PackagePickerSelect({
           </Box>
 
           <VStack mt={2.5} align="stretch" spacing={1.5} maxH="240px" overflowY="auto">
+            {value ? (
+              <SurfaceCard
+                as="button"
+                type="button"
+                textAlign="left"
+                p={2.5}
+                borderRadius="8px"
+                borderColor={uiColors.border}
+                onClick={() => {
+                  onChange("");
+                  setIsOpen(false);
+                  setQuery("");
+                }}
+              >
+                <Text fontSize="sm" color={uiColors.textSecondary}>{clearLabel}</Text>
+              </SurfaceCard>
+            ) : null}
             {filteredOptions.length ? (
               filteredOptions.map((item) => (
                 <SurfaceCard
@@ -196,6 +228,7 @@ function GroupFormModal({
   packageOptions = [],
   onClose,
   onSubmit,
+  onOrderIntent,
   onValidationError
 }) {
   const [name, setName] = useState("");
@@ -204,7 +237,6 @@ function GroupFormModal({
   const [travelStartDate, setTravelStartDate] = useState("");
   const [travelEndDate, setTravelEndDate] = useState("");
   const [deliveryMethod, setDeliveryMethod] = useState(DELIVERY_SMS);
-  const [assignPackageNow, setAssignPackageNow] = useState(false);
   const [selectedPackageId, setSelectedPackageId] = useState("");
   const [members, setMembers] = useState([]);
   const [memberInput, setMemberInput] = useState({
@@ -217,6 +249,8 @@ function GroupFormModal({
     ...{
       create: "Yaratish",
       save: "Saqlash",
+      saveGroup: "Сохранить группу",
+      orderEsim: "Заказать eSIM",
       cancel: "Bekor qilish",
       close: "Yopish",
       add: "Qo'shish",
@@ -224,6 +258,7 @@ function GroupFormModal({
     },
     ...(t?.actions || {})
   };
+
   const form = {
     ...{
       createTitle: "Yangi guruh yaratish",
@@ -236,12 +271,11 @@ function GroupFormModal({
       departure: "Ketish sanasi",
       return: "Qaytish sanasi",
       deliveryMethod: "eSIM yetkazib berish usuli",
-      assignPackageNow: "Yaratishda paket biriktirish",
-      assignPackageNowHelper: "Yoqilsa, saqlangandan keyin to'lov tasdiqlash oynasi ochiladi.",
       package: "Paket",
       packagePlaceholder: "Paketni tanlang",
       packageSearchPlaceholder: "Paket qidirish",
       noPackages: "Paket topilmadi",
+      noPackage: "Paket biriktirmaslik",
       customers: "Mijozlar ro'yxati",
       customerName: "Ism familiya",
       customerPhone: "Telefon raqam",
@@ -251,7 +285,7 @@ function GroupFormModal({
       smsRequired: "SMS uchun telefon majburiy",
       emailRequired: "Email uchun email majburiy",
       requiredFields: "Guruh nomi va davlat majburiy",
-      packageRequired: "Paketni tanlang yoki paket biriktirishni o'chiring"
+      packageRequired: "Zaказ eSIM uchun paket tanlang"
     },
     ...(t?.form || {})
   };
@@ -265,7 +299,6 @@ function GroupFormModal({
     setTravelStartDate(group?.travelStartDate || "");
     setTravelEndDate(group?.travelEndDate || "");
     setDeliveryMethod(group?.deliveryMethod || DELIVERY_SMS);
-    setAssignPackageNow(Boolean(group?.packageId || group?.forceAssignPackageNow));
     setSelectedPackageId(group?.packageId || "");
     setMembers(group?.members || []);
     setMemberInput({
@@ -286,14 +319,14 @@ function GroupFormModal({
   );
 
   useEffect(() => {
-    if (!assignPackageNow || !selectedPackage) return;
+    if (!selectedPackage) return;
     if (!destination.trim() && selectedPackage.destination) {
       setDestination(selectedPackage.destination);
     }
     if (selectedPackage.countryCode && selectedPackage.countryCode !== destinationCountryCode) {
       setDestinationCountryCode(String(selectedPackage.countryCode).toUpperCase());
     }
-  }, [assignPackageNow, destination, destinationCountryCode, selectedPackage]);
+  }, [destination, destinationCountryCode, selectedPackage]);
 
   useEffect(() => {
     setMemberInput((prev) => {
@@ -339,14 +372,15 @@ function GroupFormModal({
     });
   };
 
-  const handleSubmit = () => {
+  const buildPayload = (options = {}) => {
+    const requirePackage = Boolean(options?.requirePackage);
     if (!name.trim() || !destination.trim()) {
       notifyError(form.requiredFields);
-      return;
+      return null;
     }
-    if (assignPackageNow && !selectedPackageId) {
+    if (requirePackage && !selectedPackageId) {
       notifyError(form.packageRequired);
-      return;
+      return null;
     }
 
     const sanitizedMembers = members.map((member) => sanitizeMember(member));
@@ -365,10 +399,10 @@ function GroupFormModal({
             ? form.emailRequired
             : form.customerName
       );
-      return;
+      return null;
     }
 
-    onSubmit({
+    return {
       id: group?.id,
       name,
       destination,
@@ -378,10 +412,21 @@ function GroupFormModal({
       members: sanitizedMembers,
       deliveryMethod,
       deliveryTime: "now",
-      assignPackageNow,
       packageId: selectedPackageId || undefined,
       packageSelected: selectedPackage
-    });
+    };
+  };
+
+  const handleSave = () => {
+    const payload = buildPayload();
+    if (!payload) return;
+    onSubmit(payload, { intent: "save" });
+  };
+
+  const handleOrder = () => {
+    const payload = buildPayload({ requirePackage: true });
+    if (!payload || !onOrderIntent) return;
+    onOrderIntent(payload);
   };
 
   return (
@@ -465,25 +510,16 @@ function GroupFormModal({
             </Box>
 
             <Box borderTopWidth="1px" borderColor={uiColors.border} pt={5}>
-              <AppSwitch
-                label={form.assignPackageNow}
-                description={form.assignPackageNowHelper}
-                isChecked={assignPackageNow}
-                onChange={(event) => setAssignPackageNow(event.target.checked)}
+              <Text mb={2} fontSize="sm" fontWeight="600" color={uiColors.textPrimary}>{form.package}</Text>
+              <PackagePickerSelect
+                value={selectedPackageId}
+                options={packageOptions}
+                placeholder={form.packagePlaceholder}
+                searchPlaceholder={form.packageSearchPlaceholder}
+                emptyLabel={form.noPackages}
+                clearLabel={form.noPackage}
+                onChange={setSelectedPackageId}
               />
-              {assignPackageNow ? (
-                <Box mt={3}>
-                  <Text mb={2} fontSize="sm" fontWeight="600" color={uiColors.textPrimary}>{form.package}</Text>
-                  <PackagePickerSelect
-                    value={selectedPackageId}
-                    options={packageOptions}
-                    placeholder={form.packagePlaceholder}
-                    searchPlaceholder={form.packageSearchPlaceholder}
-                    emptyLabel={form.noPackages}
-                    onChange={setSelectedPackageId}
-                  />
-                </Box>
-              ) : null}
             </Box>
 
             <Box borderTopWidth="1px" borderColor={uiColors.border} pt={5}>
@@ -550,10 +586,17 @@ function GroupFormModal({
           </VStack>
 
           <HStack px={5} py={4} borderTopWidth="1px" borderColor={uiColors.border} justify="end" bg={uiColors.surfaceSoft}>
-            <AppButton onClick={onClose}>{actions.cancel}</AppButton>
-            <AppButton variant="primary" onClick={handleSubmit}>
-              {mode === "edit" ? actions.save : assignPackageNow ? "To'lovga o'tish" : actions.create}
-            </AppButton>
+            {mode === "edit" ? (
+              <>
+                <AppButton onClick={onClose}>{actions.cancel}</AppButton>
+                <AppButton variant="primary" onClick={handleSave}>{actions.save}</AppButton>
+              </>
+            ) : (
+              <>
+                <AppButton variant="primary" onClick={handleSave}>{actions.saveGroup}</AppButton>
+                <AppButton variant="dark" onClick={handleOrder} isDisabled={!selectedPackageId}>{actions.orderEsim}</AppButton>
+              </>
+            )}
           </HStack>
         </SurfaceCard>
       </Box>
@@ -562,4 +605,3 @@ function GroupFormModal({
 }
 
 export default GroupFormModal;
-

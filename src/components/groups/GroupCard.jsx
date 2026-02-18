@@ -32,6 +32,10 @@ function formatSchedule(value) {
 function GroupCard({ group, t, deliveryIcon: DeliveryIcon, onEdit, onDelete, onOpenDetails, onAttachPackage }) {
   const membersCount = group.members?.length || 0;
   const hasPackage = Boolean(group.packageLabel);
+  const isEsimOrdered = group.esimOrderStatus === "ordered";
+  const esimOrderStatusLabel = isEsimOrdered
+    ? (t.labels.esimsOrdered || "eSIMs ordered")
+    : (t.labels.esimsNotOrdered || "eSIMs not ordered");
 
   return (
     <SurfaceCard
@@ -92,6 +96,21 @@ function GroupCard({ group, t, deliveryIcon: DeliveryIcon, onEdit, onDelete, onO
         </HStack>
 
         <Box borderTopWidth="1px" borderColor="#f1f5f9" pt={4}>
+          <HStack justify="space-between" mb={3}>
+            <Text fontSize="xs" textTransform="uppercase" color={uiColors.textSecondary}>
+              {t.labels.esimOrderStatus || "eSIM holati"}
+            </Text>
+            <Badge
+              borderRadius="999px"
+              px={2.5}
+              py={0.5}
+              bg={isEsimOrdered ? "#dcfce7" : "#fef3c7"}
+              color={isEsimOrdered ? "#166534" : "#92400e"}
+              fontSize="10px"
+            >
+              {esimOrderStatusLabel}
+            </Badge>
+          </HStack>
           {hasPackage ? (
             <Box
               bg="#f4f6f9"
