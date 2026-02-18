@@ -20,6 +20,7 @@ function PlanCardGrid({
   plans,
   currentPage,
   totalPages,
+  totalCount,
   pageSize,
   onPageChange,
   onOpenDetails,
@@ -35,7 +36,7 @@ function PlanCardGrid({
     );
   }
 
-  if (isLoading) {
+  if (isLoading && !plans.length) {
     return (
       <SurfaceCard p={4}>
         <VStack spacing={3} align="stretch">
@@ -47,7 +48,7 @@ function PlanCardGrid({
     );
   }
 
-  if (!plans.length) {
+  if (!isLoading && !plans.length) {
     return (
       <SurfaceCard p={8} textAlign="center">
         <Text color={uiColors.textSecondary}>{t.noPlans}</Text>
@@ -57,7 +58,7 @@ function PlanCardGrid({
 
   return (
     <VStack spacing={4} align="stretch">
-      <SurfaceCard overflow="hidden">
+      <SurfaceCard overflow="hidden" opacity={isLoading ? 0.5 : 1} transition="opacity 0.15s">
         <AppDataTable
           minWidth="920px"
           columns="2.2fr 1.4fr 1fr 1fr 1.6fr"
@@ -133,8 +134,9 @@ function PlanCardGrid({
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={onPageChange}
-          totalItems={null}
+          totalItems={totalCount}
           pageSize={pageSize}
+          itemLabel="tarif"
         />
       </Box>
     </VStack>

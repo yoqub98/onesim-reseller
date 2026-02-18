@@ -1,5 +1,5 @@
 import { VStack } from "@chakra-ui/react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CatalogFilters, OrderModal, PackageDetailsModal, PlanCardGrid } from "../components/catalog";
 import PageHeader from "../components/layout/PageHeader";
@@ -10,7 +10,6 @@ import { DELIVERY_EMAIL, DELIVERY_OPERATOR, DELIVERY_SMS } from "../constants/de
 import { pageLayout } from "../design-system/tokens";
 import { useFormFields } from "../hooks/useFormFields";
 import { useModal } from "../hooks/useModal";
-import { useServiceData } from "../hooks/useServiceData";
 import { catalogService } from "../services/catalogService";
 import { groupsService } from "../services/groupsService";
 import { formatMoneyFromUsd } from "../utils/currency";
@@ -44,19 +43,6 @@ function createCustomer() {
   };
 }
 
-function matchesDataBucket(plan, bucket) {
-  if (bucket === "all") return true;
-  const dataGb = Number(plan?.dataGb || 0);
-
-  if (bucket === "upTo1") return dataGb <= 1;
-  if (bucket === "1to5") return dataGb > 1 && dataGb <= 5;
-  if (bucket === "5to10") return dataGb > 5 && dataGb <= 10;
-  if (bucket === "10to20") return dataGb > 10 && dataGb <= 20;
-  if (bucket === "20plus") return dataGb >= 20;
-
-  return true;
-}
-
 function CatalogPage() {
   const navigate = useNavigate();
   const { partner } = useAuth();
@@ -73,24 +59,18 @@ function CatalogPage() {
   const [isGroupPickerOpen, setIsGroupPickerOpen] = useState(false);
   const [groupCandidateId, setGroupCandidateId] = useState("");
 
-  const requestParams = useMemo(() => ({ partner }), [partner]);
+  // Server-side data state
+  const [plans, setPlans] = useState(EMPTY_LIST);
+  const [totalCount, setTotalCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+  const [groups, setGroups] = useState(EMPTY_LIST);
 
-  const loadCatalogPageData = useCallback(async ({ partner: partnerProfile } = {}) => {
-    const [plans, groups] = await Promise.all([
-      catalogService.getPlans({ partner: partnerProfile }),
-      groupsService.listGroups()
-    ]);
-    return { plans, groups };
-  }, []);
-
-  const { data: catalogData, loading: isLoading, error: loadError } = useServiceData(loadCatalogPageData, requestParams);
-
-  const plans = catalogData?.plans || EMPTY_LIST;
-  const groups = catalogData?.groups || EMPTY_LIST;
-  const error = loadError ? (loadError.message || "Katalogni yuklashda xatolik") : "";
+  // Filter options loaded once
+  const [destinationOptions, setDestinationOptions] = useState([]);
+  const [dayFilterOptions, setDayFilterOptions] = useState([]);
 
   const { fields: filters, setField } = useFormFields({
-    search: "",
     destination: "all",
     locationType: "all",
     packageType: "all",
@@ -98,10 +78,76 @@ function CatalogPage() {
     days: "all"
   });
 
-  const destinationOptions = useMemo(
-    () => ["all", ...new Set(plans.map((plan) => plan.destination).filter(Boolean))],
-    [plans]
-  );
+  // Abort controller ref for cancelling in-flight requests
+  const abortRef = useRef(0);
+
+  // Load filter options + groups once on mount
+  useEffect(() => {
+    let mounted = true;
+    async function loadStaticData() {
+      try {
+        const [destinations, durations, groupsList] = await Promise.all([
+          catalogService.getDestinations(),
+          catalogService.getDurations(),
+          groupsService.listGroups()
+        ]);
+        if (!mounted) return;
+        setDestinationOptions(destinations);
+        setDayFilterOptions(durations);
+        setGroups(groupsList);
+      } catch {
+        // static data failure is non-critical
+      }
+    }
+    loadStaticData();
+    return () => { mounted = false; };
+  }, []);
+
+  // Fetch plans whenever filters, page, or partner changes
+  useEffect(() => {
+    const requestId = ++abortRef.current;
+    let mounted = true;
+
+    async function fetchPage() {
+      setIsLoading(true);
+      setLoadError(null);
+      try {
+        const result = await catalogService.getPlans({
+          partner,
+          filters,
+          page: currentPage,
+          pageSize: PAGE_SIZE
+        });
+        if (!mounted || requestId !== abortRef.current) return;
+        setPlans(result.plans);
+        setTotalCount(result.totalCount);
+      } catch (err) {
+        if (!mounted || requestId !== abortRef.current) return;
+        setLoadError(err);
+        setPlans(EMPTY_LIST);
+        setTotalCount(0);
+      } finally {
+        if (mounted && requestId === abortRef.current) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    fetchPage();
+    return () => { mounted = false; };
+  }, [partner, filters, currentPage]);
+
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+  const error = loadError ? (loadError.message || "Katalogni yuklashda xatolik") : "";
+
+  // Reset to page 1 when filters change
+  const prevFiltersRef = useRef(filters);
+  useEffect(() => {
+    if (prevFiltersRef.current !== filters) {
+      prevFiltersRef.current = filters;
+      setCurrentPage(1);
+    }
+  }, [filters]);
 
   const locationTypeOptions = useMemo(
     () => [
@@ -122,18 +168,6 @@ function CatalogPage() {
     [t.units.all]
   );
 
-  const dayFilterOptions = useMemo(() => {
-    const durations = [...new Set(plans.map((plan) => String(plan.validityDays)).filter(Boolean))]
-      .map((value) => Number(value))
-      .filter((value) => Number.isFinite(value) && value >= 0)
-      .sort((a, b) => a - b);
-
-    return [
-      { value: "all", label: t.units.all },
-      ...durations.map((value) => ({ value: String(value), label: `${value} ${t.units.day}` }))
-    ];
-  }, [plans, t.units.all, t.units.day]);
-
   const dataFilterOptions = useMemo(
     () =>
       dataFilterOptionsBase.map((option) => ({
@@ -143,47 +177,10 @@ function CatalogPage() {
     [t.units.all]
   );
 
-  const filteredPlans = useMemo(() => {
-    const search = filters.search.trim().toLowerCase();
-
-    return plans
-      .filter((plan) => {
-        const destinationMatch = filters.destination === "all" || plan.destination === filters.destination;
-        const locationTypeMatch = filters.locationType === "all" || plan.locationType === filters.locationType;
-        const packageTypeMatch =
-          filters.packageType === "all" ||
-          (filters.packageType === "daily" ? Number(plan.dataType) === 2 : Number(plan.dataType) !== 2);
-        const dataMatch = matchesDataBucket(plan, filters.data);
-        const dayMatch = filters.days === "all" || String(plan.validityDays) === filters.days;
-        const searchMatch =
-          !search ||
-          [plan.name, plan.destination, plan.countryCode, plan.packageCode, plan.slug]
-            .filter(Boolean)
-            .some((value) => String(value).toLowerCase().includes(search));
-
-        return destinationMatch && locationTypeMatch && packageTypeMatch && dataMatch && dayMatch && searchMatch;
-      })
-      .sort((a, b) => {
-        if (a.destination !== b.destination) {
-          return String(a.destination).localeCompare(String(b.destination));
-        }
-        if (a.validityDays !== b.validityDays) {
-          return Number(a.validityDays) - Number(b.validityDays);
-        }
-        return Number(a.dataGb) - Number(b.dataGb);
-      });
-  }, [filters, plans]);
-
-  const totalPages = Math.ceil(filteredPlans.length / PAGE_SIZE);
-  const paginatedPlans = useMemo(
-    () => filteredPlans.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
-    [filteredPlans, currentPage]
-  );
-
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filters]);
+  const dayFilterOptionsMemo = useMemo(() => [
+    { value: "all", label: t.units.all },
+    ...dayFilterOptions.map((value) => ({ value: String(value), label: `${value} ${t.units.day}` }))
+  ], [dayFilterOptions, t.units.all, t.units.day]);
 
   const renderOriginalPrice = useCallback(
     (plan) => formatMoneyFromUsd(plan.originalPriceUsd || 0, currency),
@@ -289,7 +286,7 @@ function CatalogPage() {
         locationTypeOptions={locationTypeOptions}
         packageTypeOptions={packageTypeOptions}
         dataFilterOptions={dataFilterOptions}
-        dayFilterOptions={dayFilterOptions}
+        dayFilterOptions={dayFilterOptionsMemo}
         onChange={(patch) => {
           const [key, value] = Object.entries(patch)[0];
           setField(key, value);
@@ -300,9 +297,10 @@ function CatalogPage() {
         t={t}
         isLoading={isLoading}
         error={error}
-        plans={paginatedPlans}
+        plans={plans}
         currentPage={currentPage}
         totalPages={totalPages}
+        totalCount={totalCount}
         pageSize={PAGE_SIZE}
         onPageChange={setCurrentPage}
         onOpenDetails={detailsModal.open}

@@ -1,4 +1,5 @@
 export { AppButton, AppIconButton } from "./AppButton";
+export { default as AppCombobox } from "./AppCombobox";
 export { AppInput } from "./AppInput";
 export { FilterChips, SegmentedControl } from "./FilterChips";
 export { default as AppSelect } from "./AppSelect";

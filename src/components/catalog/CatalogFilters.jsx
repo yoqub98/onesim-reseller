@@ -1,7 +1,7 @@
 // Renders the destination and package filter controls — used in CatalogPage
 import { FunnelIcon } from "@heroicons/react/24/outline";
 import { Box, Grid, HStack, Text } from "@chakra-ui/react";
-import { AppInput, AppSelect, FilterChips, SurfaceCard } from "../ui";
+import { AppCombobox, AppSelect, FilterChips, SurfaceCard } from "../ui";
 import { uiColors } from "../../design-system/tokens";
 
 function CatalogFilters({
@@ -24,32 +24,18 @@ function CatalogFilters({
         <Text fontWeight="600">{t.filtersTitle}</Text>
       </HStack>
 
-      <Grid templateColumns={{ base: "1fr", lg: "1.1fr 1fr 1fr 1fr" }} gap={4}>
-        <Box>
-          <Text fontSize="xs" color={uiColors.textSecondary} mb={1.5}>
-            {t.filters.search}
-          </Text>
-          <AppInput
-            value={filters.search}
-            onChange={(event) => onChange({ search: event.target.value })}
-            placeholder={t.filters.search}
-          />
-        </Box>
-
+      <Grid templateColumns={{ base: "1fr", lg: "1.1fr 1fr 1fr" }} gap={4}>
         <Box>
           <Text fontSize="xs" color={uiColors.textSecondary} mb={1.5}>
             {t.filters.destination}
           </Text>
-          <AppSelect
+          <AppCombobox
             value={filters.destination}
-            onChange={(event) => onChange({ destination: event.target.value })}
-          >
-            {destinationOptions.map((destination) => (
-              <option key={destination} value={destination}>
-                {destination === "all" ? t.units.all : destination}
-              </option>
-            ))}
-          </AppSelect>
+            options={destinationOptions}
+            onChange={(value) => onChange({ destination: value })}
+            placeholder={t.filters.search}
+            allLabel={t.units.all}
+          />
         </Box>
 
         <Box>
