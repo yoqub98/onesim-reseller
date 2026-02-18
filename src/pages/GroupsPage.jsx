@@ -62,7 +62,7 @@ const groupsFallback = {
   }
 };
 
-const gridGap = { base: 6, xl: 8 };
+const gridGap = { base: 4, md: 5, lg: 6 };
 
 function GroupsPage() {
   const { dict } = useLocale();
@@ -155,8 +155,8 @@ function GroupsPage() {
         ) : null}
 
         {isLoading ? (
-          <SimpleGrid columns={{ base: 1, xl: 2 }} spacing={gridGap}>
-            {Array.from({ length: 2 }).map((_, index) => (
+          <SimpleGrid columns={{ base: 1, md: 2, xl: 3 }} spacing={gridGap}>
+            {Array.from({ length: 3 }).map((_, index) => (
               <SurfaceCard key={`group-skeleton-${index}`} p={5} minH="310px" bg={uiColors.surfaceSoft} />
             ))}
           </SimpleGrid>
@@ -164,7 +164,7 @@ function GroupsPage() {
 
         {!isLoading && !loadError ? (
           groups.length ? (
-            <SimpleGrid columns={{ base: 1, xl: 2 }} spacing={gridGap}>
+            <SimpleGrid columns={{ base: 1, md: 2, xl: 3 }} spacing={gridGap}>
               {groups.map((group) => (
                 <GroupCard
                   key={group.id}
