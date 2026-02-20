@@ -12,6 +12,7 @@ import PageHeader from "../components/layout/PageHeader";
 import { GroupCard, GroupDetailsModal, GroupFormModal } from "../components/groups";
 import { AppButton, AppInput, SurfaceCard } from "../components/ui";
 import { useAuth } from "../context/AuthContext";
+import { useCurrency } from "../context/CurrencyContext";
 import { useLocale } from "../context/LocaleContext";
 import { pageLayout, uiColors } from "../design-system/tokens";
 import { useAppToasts } from "../hooks/useAppToasts";
@@ -98,12 +99,14 @@ const gridGap = { base: 4, md: 6, lg: 8 };
 
 async function loadGroupPackageOptions(params = {}) {
   const partner = params?.partner || null;
+  const usdToUzsRate = params?.usdToUzsRate || undefined;
   const pageSize = 250;
 
   const firstPage = await catalogService.getPlans({
     partner,
     page: 1,
-    pageSize
+    pageSize,
+    usdToUzsRate
   });
 
   const totalCount = firstPage?.totalCount || 0;
@@ -114,7 +117,8 @@ async function loadGroupPackageOptions(params = {}) {
     const nextPage = await catalogService.getPlans({
       partner,
       page: currentPage,
-      pageSize
+      pageSize,
+      usdToUzsRate
     });
     const nextPlans = nextPage?.plans || [];
     if (!nextPlans.length) {
@@ -135,6 +139,7 @@ async function loadGroupPackageOptions(params = {}) {
 
 function GroupsPage() {
   const { partner } = useAuth();
+  const { exchangeRate } = useCurrency();
   const { dict } = useLocale();
   const t = dict.groups || groupsFallback;
   const { toasts, pushToast } = useAppToasts();
@@ -152,7 +157,7 @@ function GroupsPage() {
   } = useServiceData(groupsService.listGroups, listParams);
   const groups = groupsData || [];
 
-  const packageParams = useMemo(() => ({ partner }), [partner]);
+  const packageParams = useMemo(() => ({ partner, usdToUzsRate: exchangeRate }), [partner, exchangeRate]);
   const { data: packageOptionsData } = useServiceData(loadGroupPackageOptions, packageParams);
   const packageOptions = packageOptionsData || [];
 

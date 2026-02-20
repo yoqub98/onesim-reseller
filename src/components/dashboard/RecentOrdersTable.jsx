@@ -26,7 +26,7 @@ const statusColorMap = {
 };
 
 function RecentOrdersTable({ orders = [], isLoading }) {
-  const { currency } = useCurrency();
+  const { currency, exchangeRate } = useCurrency();
   const { dict } = useLocale();
   const dashboardT = dict.dashboard;
   const statusT = dict.status;
@@ -61,7 +61,7 @@ function RecentOrdersTable({ orders = [], isLoading }) {
                   </HStack>
                   <HStack justify="space-between">
                     <Text color="gray.700">{order.customerName}</Text>
-                    <Text color="gray.700">{formatMoneyFromUsd(order.amount, currency)}</Text>
+                    <Text color="gray.700">{formatMoneyFromUsd(order.amount, currency, exchangeRate)}</Text>
                   </HStack>
                   <HStack spacing={2} color="gray.600">
                     <CountryFlag code={order.countryCode} size={14} />

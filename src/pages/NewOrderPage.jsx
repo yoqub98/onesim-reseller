@@ -42,15 +42,18 @@ const EMPTY_LIST = [];
 // - Reads plans/groups via catalogService + groupsService
 // - Writes order via ordersService.createOrder
 // - Input/output contract: src/services/CONTRACTS.md
-async function loadNewOrderData() {
-  const [plans, groups] = await Promise.all([catalogService.getPlans(), groupsService.listGroups()]);
+async function loadNewOrderData(params) {
+  const [plans, groups] = await Promise.all([
+    catalogService.getPlans({ usdToUzsRate: params?.usdToUzsRate }),
+    groupsService.listGroups()
+  ]);
   return { plans, groups };
 }
 
 function NewOrderPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { currency } = useCurrency();
+  const { currency, exchangeRate } = useCurrency();
   const { dict } = useLocale();
   const orderT = dict.order || uz.order;
   const commonT = dict.common || uz.common;
@@ -59,7 +62,8 @@ function NewOrderPage() {
     { id: "mode", label: orderT.steps.mode },
     { id: "checkout", label: orderT.steps.checkout }
   ];
-  const { data: newOrderData, loading: isLoading, error: loadError } = useServiceData(loadNewOrderData);
+  const loadParams = useMemo(() => ({ usdToUzsRate: exchangeRate }), [exchangeRate]);
+  const { data: newOrderData, loading: isLoading, error: loadError } = useServiceData(loadNewOrderData, loadParams);
   const plans = newOrderData?.plans || EMPTY_LIST;
   const groups = newOrderData?.groups || EMPTY_LIST;
   const error = loadError ? (loadError.message || "Yangi buyurtma sahifasi yuklanmadi") : "";
@@ -278,7 +282,7 @@ function NewOrderPage() {
                     <Badge>{plan.coverage}</Badge>
                   </HStack>
 
-                  <Text mt={2} fontWeight="bold">{formatMoneyFromUsd(plan.price, currency)}</Text>
+                  <Text mt={2} fontWeight="bold">{formatMoneyFromUsd(plan.price, currency, exchangeRate)}</Text>
                 </Box>
               );
             })}
@@ -491,19 +495,19 @@ function NewOrderPage() {
             <VStack align="stretch" spacing={2}>
               <HStack justify="space-between">
                 <HStack spacing={1}><SignalIcon width={16} /><Text>{orderT.summary.price}</Text></HStack>
-                <Text>{formatMoneyFromUsd(selectedPlan ? selectedPlan.price : 0, currency)}</Text>
+                <Text>{formatMoneyFromUsd(selectedPlan ? selectedPlan.price : 0, currency, exchangeRate)}</Text>
               </HStack>
               <HStack justify="space-between">
                 <Text>{orderT.summary.discount}</Text>
-                <Text color="green.600">- {formatMoneyFromUsd(discount, currency)}</Text>
+                <Text color="green.600">- {formatMoneyFromUsd(discount, currency, exchangeRate)}</Text>
               </HStack>
               <HStack justify="space-between">
                 <Text>{orderT.summary.subtotal}</Text>
-                <Text fontWeight="semibold">{formatMoneyFromUsd(subtotal, currency)}</Text>
+                <Text fontWeight="semibold">{formatMoneyFromUsd(subtotal, currency, exchangeRate)}</Text>
               </HStack>
               <HStack justify="space-between">
                 <HStack spacing={1}><BanknotesIcon width={16} /><Text>{orderT.summary.commission}</Text></HStack>
-                <Text color="orange.600">{formatMoneyFromUsd(commission, currency)}</Text>
+                <Text color="orange.600">{formatMoneyFromUsd(commission, currency, exchangeRate)}</Text>
               </HStack>
               <HStack justify="space-between">
                 <Text>{orderT.summary.payment}</Text>

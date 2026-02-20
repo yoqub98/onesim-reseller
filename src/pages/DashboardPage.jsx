@@ -41,7 +41,7 @@ async function loadDashboardData() {
 function DashboardPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { currency } = useCurrency();
+  const { currency, exchangeRate } = useCurrency();
   const { dict } = useLocale();
   const { toasts, pushToast } = useAppToasts();
   const dashboardT = dict.dashboard;
@@ -134,7 +134,7 @@ function DashboardPage() {
           ) : (
             <StatCard
               label={dashboardT.stats.totalEarnings}
-              value={formatMoneyFromUsd(earnings?.totalCommission ?? 0, currency)}
+              value={formatMoneyFromUsd(earnings?.totalCommission ?? 0, currency, exchangeRate)}
               helper={`${earnings?.monthlyGrowthPct ?? 0}%`}
               icon={<BanknotesIcon width={22} color="#FE4F18" />}
             />

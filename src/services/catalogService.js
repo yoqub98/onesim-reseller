@@ -69,6 +69,7 @@ export const catalogService = {
     const filters = params?.filters || {};
     const page = params?.page || 1;
     const pageSize = params?.pageSize || 15;
+    const usdToUzsRate = params?.usdToUzsRate || undefined;
 
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
@@ -95,7 +96,7 @@ export const catalogService = {
 
     const rows = data || [];
     return {
-      plans: rows.map((row) => mapPackageRowToPlan(row, { partner })),
+      plans: rows.map((row) => mapPackageRowToPlan(row, { partner, usdToUzsRate })),
       totalCount: count || 0
     };
   },

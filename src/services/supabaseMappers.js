@@ -8,7 +8,7 @@
  * - Centralized mapping avoids spreading conversion logic across pages.
  */
 
-const DEFAULT_USD_TO_UZS = 12500;
+const DEFAULT_USD_TO_UZS = 12800;
 
 const statusMap = {
   PENDING: "pending",

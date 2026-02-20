@@ -60,7 +60,7 @@ function createCustomer() {
 function CatalogPage() {
   const navigate = useNavigate();
   const { partner } = useAuth();
-  const { currency } = useCurrency();
+  const { currency, exchangeRate } = useCurrency();
   const { dict } = useLocale();
   const t = dict.catalog;
 
@@ -133,7 +133,8 @@ function CatalogPage() {
           partner,
           filters,
           page: currentPage,
-          pageSize: PAGE_SIZE
+          pageSize: PAGE_SIZE,
+          usdToUzsRate: exchangeRate
         });
         if (!mounted || requestId !== abortRef.current) return;
         setPlans(result.plans);
@@ -152,7 +153,7 @@ function CatalogPage() {
 
     fetchPage();
     return () => { mounted = false; };
-  }, [partner, filters, currentPage]);
+  }, [partner, filters, currentPage, exchangeRate]);
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
   const error = loadError ? (loadError.message || "Katalogni yuklashda xatolik") : "";
@@ -191,13 +192,13 @@ function CatalogPage() {
   );
 
   const renderOriginalPrice = useCallback(
-    (plan) => formatMoneyFromUsd(plan.originalPriceUsd || 0, currency),
-    [currency]
+    (plan) => formatMoneyFromUsd(plan.originalPriceUsd || 0, currency, exchangeRate),
+    [currency, exchangeRate]
   );
 
   const renderResellerPrice = useCallback(
-    (plan) => formatMoneyFromUsd(plan.resellerPriceUsd || 0, currency),
-    [currency]
+    (plan) => formatMoneyFromUsd(plan.resellerPriceUsd || 0, currency, exchangeRate),
+    [currency, exchangeRate]
   );
 
   const resetOrderFlow = useCallback(() => {
