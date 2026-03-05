@@ -7,7 +7,7 @@ function SurfaceCard({ children, ...props }) {
       bg={uiColors.surface}
       borderWidth="1px"
       borderColor={uiColors.border}
-      borderRadius={uiRadii.md}
+      borderRadius={uiRadii.lg}
       boxShadow={uiShadows.soft}
       {...props}
     >
