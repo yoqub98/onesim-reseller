@@ -5,26 +5,26 @@ import { uiColors, uiRadii, uiShadows } from "../../design-system/tokens";
 const toastConfig = {
   success: {
     icon: CheckCircleIcon,
-    borderColor: "#bbf7d0",
-    bg: "#f0fdf4",
+    borderColor: "#86efac",
+    bg: uiColors.successSoft,
     textColor: "#166534"
   },
   error: {
     icon: XCircleIcon,
-    borderColor: "#fecaca",
-    bg: "#fef2f2",
+    borderColor: "#fca5a5",
+    bg: uiColors.errorSoft,
     textColor: "#991b1b"
   },
   warning: {
     icon: ExclamationCircleIcon,
-    borderColor: "#fde68a",
-    bg: "#fffbeb",
+    borderColor: "#fcd34d",
+    bg: uiColors.warningSoft,
     textColor: "#92400e"
   },
   info: {
     icon: InformationCircleIcon,
     borderColor: "#bfdbfe",
-    bg: "#eff6ff",
+    bg: uiColors.infoSoft,
     textColor: "#1d4ed8"
   }
 };

@@ -1,6 +1,6 @@
 import { Box, Input, Text } from "@chakra-ui/react";
 import { forwardRef } from "react";
-import { uiColors, uiRadii } from "../../design-system/tokens";
+import { uiColors, uiControlSizes, uiRadii, uiShadows } from "../../design-system/tokens";
 
 /**
  * AppInput - Reusable input component matching the design system
@@ -11,24 +11,63 @@ export const AppInput = forwardRef(
     {
       label,
       error,
+      status = "default",
+      size = "md",
       helperText,
       leftElement,
       rightElement,
+      isRequired,
+      rightElementPointerEvents = "auto",
       containerProps,
       ...inputProps
     },
     ref
   ) => {
+    const resolvedStatus = error ? "error" : status;
+    const controlSize = uiControlSizes[size] || uiControlSizes.md;
+    const statusStyles = {
+      default: {
+        borderColor: uiColors.border,
+        hoverBorderColor: uiColors.borderStrong,
+        focusBorderColor: uiColors.accent,
+        focusShadow: uiShadows.focus
+      },
+      success: {
+        borderColor: "#86efac",
+        hoverBorderColor: "#4ade80",
+        focusBorderColor: uiColors.success,
+        focusShadow: "0 0 0 3px rgba(22, 163, 74, 0.25)"
+      },
+      warning: {
+        borderColor: "#fcd34d",
+        hoverBorderColor: "#f59e0b",
+        focusBorderColor: uiColors.warning,
+        focusShadow: "0 0 0 3px rgba(217, 119, 6, 0.24)"
+      },
+      error: {
+        borderColor: "#fca5a5",
+        hoverBorderColor: uiColors.error,
+        focusBorderColor: uiColors.error,
+        focusShadow: "0 0 0 3px rgba(220, 38, 38, 0.22)"
+      }
+    };
+    const activeStatus = statusStyles[resolvedStatus] || statusStyles.default;
+
     return (
       <Box {...containerProps}>
         {label && (
           <Text
-            fontSize="14px"
-            fontWeight="500"
+            fontSize="13px"
+            fontWeight="600"
             color={uiColors.textPrimary}
             mb="8px"
           >
             {label}
+            {isRequired ? (
+              <Text as="span" color={uiColors.error} ml={1}>
+                *
+              </Text>
+            ) : null}
           </Text>
         )}
         <Box position="relative">
@@ -49,26 +88,24 @@ export const AppInput = forwardRef(
           )}
           <Input
             ref={ref}
-            h="44px"
-            borderRadius={uiRadii.sm}
+            h={controlSize.h}
+            borderRadius={uiRadii.md}
             borderWidth="1px"
-            borderColor={error ? "#ef4444" : uiColors.border}
+            borderColor={activeStatus.borderColor}
             bg="white"
             color={uiColors.textPrimary}
-            fontSize="14px"
+            fontSize={controlSize.fontSize}
             pl={leftElement ? "40px" : "12px"}
             pr={rightElement ? "40px" : "12px"}
             _placeholder={{
               color: uiColors.textMuted
             }}
             _hover={{
-              borderColor: error ? "#ef4444" : uiColors.borderStrong
+              borderColor: activeStatus.hoverBorderColor
             }}
-            _focus={{
-              borderColor: error ? "#ef4444" : uiColors.accent,
-              boxShadow: error
-                ? "0 0 0 1px #ef4444"
-                : `0 0 0 1px ${uiColors.accent}`,
+            _focusVisible={{
+              borderColor: activeStatus.focusBorderColor,
+              boxShadow: activeStatus.focusShadow,
               outline: "none"
             }}
             {...inputProps}
@@ -83,6 +120,7 @@ export const AppInput = forwardRef(
               alignItems="center"
               color={uiColors.textMuted}
               cursor="pointer"
+              pointerEvents={rightElementPointerEvents}
               zIndex={1}
             >
               {rightElement}
@@ -90,12 +128,16 @@ export const AppInput = forwardRef(
           )}
         </Box>
         {error && (
-          <Text fontSize="13px" color="#ef4444" mt="6px">
+          <Text fontSize="12px" color={uiColors.error} mt="6px">
             {error}
           </Text>
         )}
         {helperText && !error && (
-          <Text fontSize="13px" color={uiColors.textMuted} mt="6px">
+          <Text
+            fontSize="12px"
+            color={resolvedStatus === "success" ? uiColors.success : uiColors.textMuted}
+            mt="6px"
+          >
             {helperText}
           </Text>
         )}

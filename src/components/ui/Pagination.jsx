@@ -12,24 +12,13 @@ function buildPageRange(currentPage, totalPages) {
 
   pages.push(1);
   if (left > 2) pages.push("...");
-  for (let i = left; i <= right; i++) pages.push(i);
+  for (let i = left; i <= right; i += 1) pages.push(i);
   if (right < totalPages - 1) pages.push("...");
   if (totalPages > 1) pages.push(totalPages);
 
   return pages;
 }
 
-/**
- * Reusable pagination component.
- *
- * @param {object} props
- * @param {number} props.currentPage  - 1-based current page
- * @param {number} props.totalPages   - total number of pages
- * @param {(page: number) => void} props.onPageChange
- * @param {number} [props.totalItems] - optional total item count for "X–Y of Z" label
- * @param {number} [props.pageSize]   - optional page size for range label
- * @param {string} [props.itemLabel]  - optional label (e.g. "ta tarif")
- */
 function Pagination({
   currentPage,
   totalPages,
@@ -49,7 +38,7 @@ function Pagination({
     <HStack justify="space-between" align="center" w="full" flexWrap="wrap" gap={3}>
       {showRange ? (
         <Text fontSize="sm" color={uiColors.textSecondary}>
-          {rangeStart}–{rangeEnd} / {totalItems} {itemLabel || ""}
+          {rangeStart}-{rangeEnd} / {totalItems} {itemLabel || ""}
         </Text>
       ) : (
         <Text />
@@ -58,38 +47,36 @@ function Pagination({
       <HStack spacing={1}>
         <AppButton
           variant="ghost"
-          h="34px"
-          minW="34px"
+          size="xs"
+          h="32px"
+          minW="32px"
           px={0}
           borderRadius={uiRadii.sm}
           isDisabled={currentPage <= 1}
           onClick={() => onPageChange(currentPage - 1)}
+          aria-label="Previous page"
         >
           <ChevronLeftIcon width={16} />
         </AppButton>
 
         {pages.map((page, idx) =>
           page === "..." ? (
-            <Text
-              key={`ellipsis-${idx}`}
-              fontSize="sm"
-              color={uiColors.textMuted}
-              px={1}
-              userSelect="none"
-            >
+            <Text key={`ellipsis-${idx}`} fontSize="sm" color={uiColors.textMuted} px={1} userSelect="none">
               ...
             </Text>
           ) : (
             <AppButton
               key={page}
               variant={page === currentPage ? "primary" : "ghost"}
-              h="34px"
-              minW="34px"
+              size="xs"
+              h="32px"
+              minW="32px"
               px={0}
               borderRadius={uiRadii.sm}
               fontSize="sm"
               fontWeight={page === currentPage ? "700" : "500"}
               onClick={() => onPageChange(page)}
+              aria-label={`Go to page ${page}`}
             >
               {page}
             </AppButton>
@@ -98,12 +85,14 @@ function Pagination({
 
         <AppButton
           variant="ghost"
-          h="34px"
-          minW="34px"
+          size="xs"
+          h="32px"
+          minW="32px"
           px={0}
           borderRadius={uiRadii.sm}
           isDisabled={currentPage >= totalPages}
           onClick={() => onPageChange(currentPage + 1)}
+          aria-label="Next page"
         >
           <ChevronRightIcon width={16} />
         </AppButton>
