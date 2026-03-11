@@ -1,13 +1,14 @@
 import { Box, HStack, Text } from "@chakra-ui/react";
-import { uiColors, uiRadii, uiShadows, uiTransitions } from "../../design-system/tokens";
+import { uiColors, uiShadows, uiTransitions } from "../../design-system/tokens";
 
 const switchSizes = {
-  sm: { trackW: "40px", trackH: "22px", knob: "18px", onLeft: "20px" },
-  md: { trackW: "48px", trackH: "28px", knob: "24px", onLeft: "22px" }
+  sm: { trackW: "36px", trackH: "20px", knob: "16px", offset: "2px" },
+  md: { trackW: "44px", trackH: "24px", knob: "20px", offset: "2px" }
 };
 
-function AppSwitch({ label, description, isChecked = false, isDisabled = false, size = "md", onChange }) {
-  const dimensions = switchSizes[size] || switchSizes.md;
+function AppSwitch({ label, description, isChecked = false, isDisabled = false, size = "sm", onChange }) {
+  const dim = switchSizes[size] || switchSizes.sm;
+  const knobTravel = `calc(${dim.trackW} - ${dim.knob} - ${dim.offset} * 2)`;
 
   const toggle = () => {
     if (!onChange || isDisabled) return;
@@ -15,13 +16,13 @@ function AppSwitch({ label, description, isChecked = false, isDisabled = false, 
   };
 
   return (
-    <HStack justify="space-between" align="start" spacing={4} w="full">
+    <HStack justify="space-between" align="start" spacing={3} w="full">
       <Box flex="1">
-        <Text fontSize="sm" fontWeight="600" color={isDisabled ? uiColors.textMuted : uiColors.textPrimary}>
+        <Text fontSize="14px" fontWeight="600" color={isDisabled ? uiColors.textMuted : uiColors.textPrimary}>
           {label}
         </Text>
         {description ? (
-          <Text mt={1} fontSize="xs" color={uiColors.textSecondary}>
+          <Text mt={0.5} fontSize="12px" color={uiColors.textSecondary}>
             {description}
           </Text>
         ) : null}
@@ -31,18 +32,20 @@ function AppSwitch({ label, description, isChecked = false, isDisabled = false, 
         type="button"
         role="switch"
         aria-checked={isChecked}
+        aria-label={label}
         disabled={isDisabled}
         onClick={toggle}
-        w={dimensions.trackW}
-        h={dimensions.trackH}
-        borderRadius={uiRadii.pill}
-        bg={isChecked ? uiColors.accent : "#cbd5e1"}
-        borderWidth="1px"
-        borderColor={isChecked ? uiColors.accent : uiColors.borderStrong}
+        w={dim.trackW}
+        h={dim.trackH}
+        minW={dim.trackW}
+        borderRadius="999px"
+        bg={isChecked ? uiColors.accent : "#d1d5db"}
         position="relative"
         transition={uiTransitions.standard}
         cursor={isDisabled ? "not-allowed" : "pointer"}
-        opacity={isDisabled ? 0.65 : 1}
+        opacity={isDisabled ? 0.5 : 1}
+        flexShrink={0}
+        _hover={!isDisabled ? { bg: isChecked ? uiColors.accentHover : "#b8bdc5" } : {}}
         _focusVisible={{
           outline: "none",
           boxShadow: uiShadows.focus
@@ -50,13 +53,14 @@ function AppSwitch({ label, description, isChecked = false, isDisabled = false, 
       >
         <Box
           position="absolute"
-          top="2px"
-          left={isChecked ? dimensions.onLeft : "2px"}
-          w={dimensions.knob}
-          h={dimensions.knob}
-          borderRadius={uiRadii.pill}
+          top={dim.offset}
+          left={dim.offset}
+          transform={isChecked ? `translateX(${knobTravel})` : "translateX(0)"}
+          w={dim.knob}
+          h={dim.knob}
+          borderRadius="50%"
           bg="white"
-          boxShadow="0 1px 2px rgba(0,0,0,0.2)"
+          boxShadow="0 1px 3px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.1)"
           transition={uiTransitions.standard}
         />
       </Box>

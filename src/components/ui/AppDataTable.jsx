@@ -18,13 +18,13 @@ function AppDataTable({
           borderBottomWidth="1px"
           borderColor={uiColors.border}
         >
-          {headers.map((header) => {
+          {headers.map((header, index) => {
             const headerConfig =
               typeof header === "string" ? { label: header } : header;
 
             return (
               <Text
-                key={headerConfig.key || headerConfig.label}
+                key={headerConfig.key || headerConfig.label || `header-${index}`}
                 px={6}
                 py={4}
                 fontSize="xs"

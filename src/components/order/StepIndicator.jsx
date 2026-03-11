@@ -1,43 +1,79 @@
 import { CheckIcon } from "@heroicons/react/24/solid";
-import { Box, HStack, Text, VStack } from "@chakra-ui/react";
+import { Box, HStack, Text } from "@chakra-ui/react";
+import { uiColors, uiRadii, uiTransitions } from "../../design-system/tokens";
 
-function StepIndicator({ steps, currentStep }) {
+function StepIndicator({ steps, currentStep, variant = "horizontal" }) {
+  const isVertical = variant === "vertical";
+
   return (
-    <HStack spacing={3} align="stretch" flexWrap="wrap">
+    <HStack
+      spacing={0}
+      align="stretch"
+      flexDirection={isVertical ? "column" : "row"}
+      w="full"
+    >
       {steps.map((step, idx) => {
         const stepIndex = idx + 1;
         const isActive = stepIndex === currentStep;
         const isDone = stepIndex < currentStep;
+        const isLast = idx === steps.length - 1;
 
         return (
-          <Box
+          <HStack
             key={step.id}
-            flex="1"
-            minW={{ base: "100%", md: "220px" }}
-            borderWidth="1px"
-            borderColor={isActive ? "orange.300" : "gray.200"}
-            bg={isActive ? "orange.50" : "white"}
-            borderRadius="lg"
-            p={3}
+            flex={isVertical ? "none" : 1}
+            spacing={0}
+            align="center"
           >
-            <HStack justify="space-between" align="start">
-              <VStack align="start" spacing={0}>
-                <Text fontSize="xs" color="gray.500">Qadam {stepIndex}</Text>
-                <Text fontWeight="semibold">{step.label}</Text>
-              </VStack>
+            <HStack spacing={3} align="center">
               <Box
-                w="22px"
-                h="22px"
-                borderRadius="full"
-                display="grid"
-                placeItems="center"
-                bg={isDone ? "green.500" : isActive ? "#FE4F18" : "gray.200"}
-                color="white"
+                w="32px"
+                h="32px"
+                borderRadius="50%"
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                bg={isDone ? uiColors.success : isActive ? uiColors.accent : "white"}
+                border="2px solid"
+                borderColor={isDone ? uiColors.success : isActive ? uiColors.accent : uiColors.border}
+                color={isDone || isActive ? "white" : uiColors.textMuted}
+                fontWeight="600"
+                fontSize="13px"
+                transition={uiTransitions.standard}
+                flexShrink={0}
               >
-                {isDone ? <CheckIcon width={12} /> : <Text fontSize="xs">{stepIndex}</Text>}
+                {isDone ? <CheckIcon width={16} /> : stepIndex}
+              </Box>
+
+              <Box>
+                <Text
+                  fontSize="13px"
+                  fontWeight="600"
+                  color={isActive ? uiColors.textPrimary : isDone ? uiColors.textSecondary : uiColors.textMuted}
+                  whiteSpace="nowrap"
+                >
+                  {step.label}
+                </Text>
+                {step.description && (
+                  <Text fontSize="12px" color={uiColors.textMuted} mt={0.5}>
+                    {step.description}
+                  </Text>
+                )}
               </Box>
             </HStack>
-          </Box>
+
+            {!isLast && (
+              <Box
+                flex={1}
+                h="2px"
+                mx={4}
+                bg={isDone ? uiColors.success : uiColors.border}
+                borderRadius={uiRadii.pill}
+                minW="24px"
+                transition={uiTransitions.standard}
+              />
+            )}
+          </HStack>
         );
       })}
     </HStack>

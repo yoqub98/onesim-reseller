@@ -1,5 +1,5 @@
-import { HStack, Stack, Text } from "@chakra-ui/react";
-import { uiColors, uiRadii, uiShadows, uiTransitions } from "../../design-system/tokens";
+import { Box, HStack, Stack, Text } from "@chakra-ui/react";
+import { uiColors, uiShadows, uiTransitions } from "../../design-system/tokens";
 
 function RadioOption({ option, isSelected, name, onChange, isDisabled }) {
   return (
@@ -8,10 +8,12 @@ function RadioOption({ option, isSelected, name, onChange, isDisabled }) {
       spacing={3}
       align="start"
       cursor={isDisabled ? "not-allowed" : "pointer"}
-      opacity={isDisabled ? 0.65 : 1}
+      opacity={isDisabled ? 0.5 : 1}
       w="fit-content"
+      role="radio"
+      aria-checked={isSelected}
     >
-      <HStack position="relative" mt="1px">
+      <Box position="relative" flexShrink={0}>
         <input
           type="radio"
           name={name}
@@ -21,21 +23,31 @@ function RadioOption({ option, isSelected, name, onChange, isDisabled }) {
           onChange={() => onChange(option.value)}
           style={{ position: "absolute", inset: 0, opacity: 0, margin: 0, cursor: isDisabled ? "not-allowed" : "pointer" }}
         />
-        <HStack
-          w="20px"
-          h="20px"
-          borderRadius={uiRadii.pill}
-          borderWidth="1px"
+        <Box
+          w="18px"
+          h="18px"
+          borderRadius="50%"
+          borderWidth="2px"
           borderColor={isSelected ? uiColors.accent : uiColors.borderStrong}
           bg="white"
-          justify="center"
-          align="center"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
           transition={uiTransitions.standard}
+          _hover={!isDisabled ? { borderColor: isSelected ? uiColors.accentHover : uiColors.accent } : {}}
           _focusWithin={{ boxShadow: uiShadows.focus }}
         >
-          {isSelected ? <HStack w="10px" h="10px" borderRadius={uiRadii.pill} bg={uiColors.accent} /> : null}
-        </HStack>
-      </HStack>
+          <Box
+            w="8px"
+            h="8px"
+            borderRadius="50%"
+            bg={uiColors.accent}
+            transform={isSelected ? "scale(1)" : "scale(0)"}
+            opacity={isSelected ? 1 : 0}
+            transition={uiTransitions.standard}
+          />
+        </Box>
+      </Box>
 
       <Stack spacing={0.5}>
         <Text fontSize="14px" fontWeight="600" color={uiColors.textPrimary} lineHeight="1.35">

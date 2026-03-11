@@ -1,6 +1,6 @@
 import { Box, HStack, Text } from "@chakra-ui/react";
 import { CheckIcon, MinusIcon } from "@heroicons/react/24/solid";
-import { uiColors, uiRadii, uiShadows, uiTransitions } from "../../design-system/tokens";
+import { uiColors, uiShadows, uiTransitions } from "../../design-system/tokens";
 
 function AppCheckbox({
   label,
@@ -20,10 +20,12 @@ function AppCheckbox({
       spacing={3}
       align="start"
       cursor={isDisabled ? "not-allowed" : "pointer"}
-      opacity={isDisabled ? 0.65 : 1}
+      opacity={isDisabled ? 0.5 : 1}
       w="fit-content"
+      role="checkbox"
+      aria-checked={isIndeterminate ? "mixed" : isChecked}
     >
-      <Box position="relative" mt="1px">
+      <Box position="relative" flexShrink={0}>
         <Box
           as="input"
           type="checkbox"
@@ -38,21 +40,22 @@ function AppCheckbox({
           cursor={isDisabled ? "not-allowed" : "pointer"}
         />
         <Box
-          w="20px"
-          h="20px"
-          borderRadius={uiRadii.xs}
-          borderWidth="1px"
+          w="16px"
+          h="16px"
+          borderRadius="4px"
+          borderWidth="2px"
           borderColor={isActive ? uiColors.accent : uiColors.borderStrong}
           bg={isActive ? uiColors.accent : "white"}
           color="white"
-          display="grid"
-          placeItems="center"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
           transition={uiTransitions.standard}
-          _hover={{ borderColor: uiColors.accentHover }}
+          _hover={!isDisabled ? { borderColor: isActive ? uiColors.accentHover : uiColors.accent } : {}}
           _focusWithin={{ boxShadow: uiShadows.focus }}
         >
-          {isIndeterminate ? <MinusIcon width={12} /> : null}
-          {!isIndeterminate && isChecked ? <CheckIcon width={12} /> : null}
+          {isIndeterminate ? <MinusIcon width={10} strokeWidth={3} /> : null}
+          {!isIndeterminate && isChecked ? <CheckIcon width={10} strokeWidth={3} /> : null}
         </Box>
       </Box>
 

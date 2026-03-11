@@ -10,7 +10,20 @@
       "mcp__claude_ai_Supabase__*",
       "mcp__claude_ai_Figma__*",
       "mcp__claude_ai_ClickUp__*",
-      "mcp__claude_ai_Kiwi_com__*"
+      "mcp__claude_ai_Kiwi_com__*",
+      "Bash(cat:*)",
+      "Bash(npm run build:*)",
+      "Bash(tree:*)",
+      "Bash(claude mcp add:*)",
+      "Bash(claude mcp auth:*)",
+      "Bash(claude mcp --help:*)",
+      "Bash(claude mcp list:*)",
+      "Bash(claude mcp get:*)",
+      "Bash(claude mcp remove:*)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "supabase"
+  ],
+  "enableAllProjectMcpServers": true
 }

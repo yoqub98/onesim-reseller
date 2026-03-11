@@ -1,5 +1,6 @@
 import { orderDetailsMock, recentOrdersMock } from "../mock/ordersMock";
 import { portalOrdersMock, portalPackagesMock } from "../mock/ordersPortalMock";
+import { groupOrdersMock, DELIVERY_STATUS } from "../mock/groupOrdersMock";
 import { USD_TO_UZS_RATE } from "../constants/currency";
 import {
   ORDER_STATUS_ACTIVE,
@@ -7,6 +8,7 @@ import {
   ORDER_STATUS_PENDING
 } from "../constants/statuses";
 import { withDelay } from "./utils";
+import { supabase } from "../lib/supabase";
 
 /**
  * Backend handoff:
@@ -27,6 +29,30 @@ const portalTypeByTab = {
 
 function normalize(value) {
   return String(value || "").trim().toLowerCase();
+}
+
+/**
+ * Checks if searchable fields match the query (supports ICCID, phone partial match).
+ * @param {Object} entry - Order entry with searchable fields
+ * @param {string} query - Normalized search query
+ * @returns {boolean}
+ */
+function matchesSearch(entry, query) {
+  if (!query) return true;
+
+  // Searchable fields for order entries
+  const searchable = [
+    entry.id,
+    entry.customerName,
+    entry.customerPhone,
+    entry.customerEmail,
+    entry.groupName,
+    entry.iccid,
+    entry.package?.name,
+    entry.package?.destination
+  ].map(normalize);
+
+  return searchable.some((value) => value.includes(query));
 }
 
 function getPortalOrderBundle(order) {
@@ -136,27 +162,31 @@ export const ordersService = {
     const tab = params.tab || "client";
     const query = normalize(params.query);
     const expectedType = portalTypeByTab[tab] || "client";
+    const statusFilter = params.status || null;
+    const dateFrom = params.dateFrom ? new Date(params.dateFrom) : null;
+    const dateTo = params.dateTo ? new Date(params.dateTo) : null;
 
     const rows = portalOrdersState
       .filter((order) => order.orderType === expectedType)
       .map((order) => getPortalOrderBundle(order))
       .filter(Boolean)
+      .filter((entry) => matchesSearch(entry, query))
       .filter((entry) => {
-        if (!query) {
-          return true;
+        // Status filter
+        if (statusFilter && entry.status !== statusFilter) {
+          return false;
         }
-
-        const searchable = [
-          entry.id,
-          entry.customerName,
-          entry.customerPhone,
-          entry.customerEmail,
-          entry.groupName,
-          entry.package?.name,
-          entry.package?.destination
-        ].map(normalize);
-
-        return searchable.some((value) => value.includes(query));
+        // Date range filter
+        if (dateFrom || dateTo) {
+          const orderDate = new Date(entry.purchasedAt);
+          if (dateFrom && orderDate < dateFrom) return false;
+          if (dateTo) {
+            const dateToEnd = new Date(dateTo);
+            dateToEnd.setHours(23, 59, 59, 999);
+            if (orderDate > dateToEnd) return false;
+          }
+        }
+        return true;
       })
       .sort((a, b) => new Date(b.purchasedAt).getTime() - new Date(a.purchasedAt).getTime());
 
@@ -270,5 +300,232 @@ export const ordersService = {
     }
 
     return withDelay({ ok: true }, 450);
+  },
+
+  // ============================================================
+  // GROUP ORDER METHODS
+  // ============================================================
+
+  /**
+   * Fetches detailed group order with all customer eSIM data.
+   * @param {string} groupOrderId - The group order ID (e.g., "GO-2025-0142")
+   * @returns {Promise<import('./types').GroupOrderDetails|null>}
+   * @endpoint GET /api/v1/group-orders/{groupOrderId}
+   * @todo Backend - Join: group_orders + customer_groups + orders + partner_customers
+   */
+  getGroupOrderDetails(groupOrderId) {
+    // TODO: Backend - Replace with Supabase query
+    const order = groupOrdersMock.find((item) => item.id === groupOrderId) || null;
+    return withDelay(order, 400);
+  },
+
+  /**
+   * Lists all group orders for current partner.
+   * @param {{ query?: string }} [params]
+   * @returns {Promise<import('./types').GroupOrderSummary[]>}
+   * @endpoint GET /api/v1/group-orders
+   * @todo Backend - Query group_orders table with partner_id filter
+   */
+  listGroupOrders(params = {}) {
+    const query = normalize(params.query);
+
+    // TODO: Backend - Replace with Supabase query
+    const orders = groupOrdersMock
+      .filter((order) => {
+        if (!query) return true;
+        const searchable = [
+          order.id,
+          order.groupName,
+          order.groupCode,
+          order.destination
+        ].map(normalize);
+        return searchable.some((val) => val.includes(query));
+      })
+      .map((order) => ({
+        id: order.id,
+        groupId: order.groupId,
+        groupName: order.groupName,
+        groupCode: order.groupCode,
+        status: order.status,
+        destination: order.destination,
+        destinationCountryCode: order.destinationCountryCode,
+        packageName: order.package?.name,
+        totalCustomers: order.totalCustomers,
+        totalPriceUzs: order.totalPriceUzs,
+        partnerPaidUzs: order.partnerPaidUzs,
+        createdAt: order.createdAt,
+        travelStartDate: order.travelStartDate,
+        travelEndDate: order.travelEndDate
+      }));
+
+    return withDelay(orders, 350);
+  },
+
+  /**
+   * Fetches single customer eSIM details within a group order.
+   * @param {string} groupOrderId
+   * @param {string} customerId
+   * @returns {Promise<import('./types').CustomerEsimDetails|null>}
+   * @endpoint GET /api/v1/group-orders/{groupOrderId}/customers/{customerId}
+   * @todo Backend - Query orders table with group_order_id and end_customer_id
+   */
+  getGroupOrderCustomerDetails(groupOrderId, customerId) {
+    // TODO: Backend - Replace with Supabase query
+    const order = groupOrdersMock.find((item) => item.id === groupOrderId);
+    if (!order) {
+      return withDelay(null, 250, true);
+    }
+
+    const customer = order.customers.find((c) => c.id === customerId) || null;
+    if (!customer) {
+      return withDelay(null, 250, true);
+    }
+
+    // Return customer with package info attached
+    return withDelay({
+      ...customer,
+      package: order.package,
+      groupOrderId: order.id,
+      groupName: order.groupName
+    }, 300);
+  },
+
+  /**
+   * Resends eSIM delivery to a specific customer in a group order.
+   * @param {string} groupOrderId
+   * @param {string} customerId
+   * @param {{ method?: 'sms' | 'email' }} [options]
+   * @returns {Promise<{ ok: boolean }>}
+   * @endpoint POST /api/v1/group-orders/{groupOrderId}/customers/{customerId}/resend
+   * @todo Backend - Trigger delivery service, update esim_delivery_logs
+   */
+  resendGroupOrderCustomerEsim(groupOrderId, customerId, options = {}) {
+    // TODO: Backend - Implement actual resend logic
+    const order = groupOrdersMock.find((item) => item.id === groupOrderId);
+    if (!order) {
+      return withDelay(null, 250, true);
+    }
+
+    const customerIndex = order.customers.findIndex((c) => c.id === customerId);
+    if (customerIndex === -1) {
+      return withDelay(null, 250, true);
+    }
+
+    // Mock: Update delivery status to "sent"
+    order.customers[customerIndex] = {
+      ...order.customers[customerIndex],
+      deliveryStatus: DELIVERY_STATUS.SENT,
+      deliverySentAt: new Date().toISOString()
+    };
+
+    return withDelay({ ok: true }, 400);
+  },
+
+  /**
+   * Generates install links for a customer's eSIM.
+   * @param {string} iccid
+   * @returns {{ ios: string, android: string, manual: string }}
+   */
+  generateInstallLinks(iccid) {
+    return {
+      ios: `https://esimsetup.apple.com/esim_qrcode_provisioning?carddata=LPA:1$esim.onesim.uz$${iccid}`,
+      android: `https://esim.onesim.uz/install?iccid=${iccid}`,
+      manual: `LPA:1$esim.onesim.uz$${iccid}`
+    };
+  },
+
+  // ============================================================
+  // SINGLE ORDER (MODE 1: TUR AGENT NOMIGA)
+  // ============================================================
+
+  /**
+   * Creates a single order for the partner themselves (Mode 1).
+   * Calls the process-single-order Edge Function.
+   *
+   * @param {{
+   *   packageCode: string,
+   *   quantity: number,
+   *   deliveryMethod: 'sms' | 'manual',
+   *   phone?: string
+   * }} payload
+   * @returns {Promise<{
+   *   success: boolean,
+   *   orders?: Array<{
+   *     id: string,
+   *     iccid: string,
+   *     short_url: string,
+   *     qr_code_data: string,
+   *     activation_code: string,
+   *     package_name: string,
+   *     delivery_status: string
+   *   }>,
+   *   sms_sent?: boolean,
+   *   summary?: {
+   *     total_orders: number,
+   *     total_paid_usd: number,
+   *     total_discount_usd: number
+   *   },
+   *   error?: string
+   * }>}
+   */
+  async createSingleOrder(payload) {
+    const { packageCode, quantity, deliveryMethod, phone } = payload;
+
+    // Get current session for auth
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    // Call Edge Function
+    const response = await supabase.functions.invoke("process-single-order", {
+      body: {
+        mode: "agent",
+        package_code: packageCode,
+        quantity: quantity || 1,
+        delivery_method: deliveryMethod || "manual",
+        phone: phone || null
+      }
+    });
+
+    if (response.error) {
+      console.error("Edge function error:", response.error);
+      return {
+        success: false,
+        error: response.error.message || "Order processing failed"
+      };
+    }
+
+    return response.data;
+  },
+
+  /**
+   * Formats phone number for Uzbekistan (removes +, spaces, ensures 998 prefix)
+   * @param {string} phone - Raw phone input
+   * @returns {string} - Formatted phone: 998XXXXXXXXX
+   */
+  formatPhoneNumber(phone) {
+    if (!phone) return "";
+    // Remove all non-digits
+    let digits = phone.replace(/\D/g, "");
+    // Add 998 prefix if missing
+    if (!digits.startsWith("998") && digits.length === 9) {
+      digits = "998" + digits;
+    }
+    // Remove leading + if present
+    if (digits.startsWith("+")) {
+      digits = digits.slice(1);
+    }
+    return digits;
+  },
+
+  /**
+   * Validates phone number for Uzbekistan format
+   * @param {string} phone - Phone number to validate
+   * @returns {boolean}
+   */
+  isValidUzPhone(phone) {
+    const formatted = this.formatPhoneNumber(phone);
+    return /^998\d{9}$/.test(formatted);
   }
 };

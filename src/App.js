@@ -3,10 +3,12 @@ import { Spinner, Text, VStack } from "@chakra-ui/react";
 import AppShell from "./components/layout/AppShell";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import CatalogPage from "./pages/CatalogPage";
+import CustomersPage from "./pages/CustomersPage";
 import DashboardPage from "./pages/DashboardPage";
 import DesignSystemPage from "./pages/DesignSystemPage";
 import EarningsPage from "./pages/EarningsPage";
 import GroupsPage from "./pages/GroupsPage";
+import GroupOrderDetailsPage from "./pages/GroupOrderDetailsPage";
 import LoginPage from "./pages/LoginPage";
 import NewOrderPage from "./pages/NewOrderPage";
 import OrderDetailsPage from "./pages/OrderDetailsPage";
@@ -185,6 +187,14 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/customers"
+        element={
+          <ProtectedRoute>
+            <CustomersPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/orders"
         element={
           <ProtectedRoute>
@@ -197,6 +207,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <OrderDetailsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/orders/group/:groupOrderId"
+        element={
+          <ProtectedRoute>
+            <GroupOrderDetailsPage />
           </ProtectedRoute>
         }
       />

@@ -7,6 +7,7 @@ import {
   InformationCircleIcon,
   PhoneIcon,
   PlusIcon,
+  PrinterIcon,
   TrashIcon,
   UserIcon,
   UsersIcon,
@@ -17,6 +18,7 @@ import CountryFlag from "../common/CountryFlag";
 import { AppButton, AppSelect, SurfaceCard } from "../ui";
 import {
   DELIVERY_EMAIL,
+  DELIVERY_MANUAL,
   DELIVERY_OPERATOR,
   DELIVERY_SMS
 } from "../../constants/delivery";
@@ -54,6 +56,12 @@ function OrderModal({
 
   const selectedIds = new Set(selectedGroups.map((group) => group.id));
   const availableGroups = groups.filter((group) => !selectedIds.has(group.id));
+  const deliveryMethodLabels = {
+    [DELIVERY_SMS]: t.modal.methods.sms,
+    [DELIVERY_EMAIL]: t.modal.methods.email,
+    [DELIVERY_MANUAL]: t.modal.methods.manual || "Manual",
+    [DELIVERY_OPERATOR]: t.modal.methods.operator
+  };
   const groupMemberCount = selectedGroups.reduce(
     (sum, group) => sum + (Array.isArray(group.members) ? group.members.length : 0),
     0
@@ -172,7 +180,7 @@ function OrderModal({
                       <option value="">{t.modal.select}</option>
                       {availableGroups.map((group) => (
                         <option key={group.id} value={group.id}>
-                          {group.name} ({group.members.length})
+                          {group.name} ({group.members.length}) - {deliveryMethodLabels[group.deliveryMethod] || group.deliveryMethod}
                         </option>
                       ))}
                     </AppSelect>
@@ -201,7 +209,12 @@ function OrderModal({
                     <HStack justify="space-between" mb={2}>
                       <HStack spacing={2}>
                         <UsersIcon width={14} color="#64748b" />
-                        <Text fontWeight="700" fontSize="sm" color="#0a0e1a">{group.name}</Text>
+                        <Box>
+                          <Text fontWeight="700" fontSize="sm" color="#0a0e1a">{group.name}</Text>
+                          <Text fontSize="xs" color={uiColors.textSecondary}>
+                            {t.modal.deliveryMethod}: {deliveryMethodLabels[group.deliveryMethod] || group.deliveryMethod}
+                          </Text>
+                        </Box>
                       </HStack>
                       <Text fontSize="sm" color={uiColors.accent} fontWeight="500" pr={8}>
                         {t.modal.totalCustomers} : {group.members.length} {t.modal.customers.toLowerCase()}
@@ -235,15 +248,23 @@ function OrderModal({
                     <AppSelect
                       h="36px"
                       value={selectedGroups[0]?.deliveryMethod || DELIVERY_SMS}
-                      leftIcon={(selectedGroups[0]?.deliveryMethod || DELIVERY_SMS) === DELIVERY_SMS ? <PhoneIcon width={14} /> : (selectedGroups[0]?.deliveryMethod || DELIVERY_SMS) === DELIVERY_EMAIL ? <EnvelopeIcon width={14} /> : <UsersIcon width={14} />}
+                      leftIcon={(selectedGroups[0]?.deliveryMethod || DELIVERY_SMS) === DELIVERY_SMS
+                        ? <PhoneIcon width={14} />
+                        : (selectedGroups[0]?.deliveryMethod || DELIVERY_SMS) === DELIVERY_EMAIL
+                          ? <EnvelopeIcon width={14} />
+                          : (selectedGroups[0]?.deliveryMethod || DELIVERY_SMS) === DELIVERY_MANUAL
+                            ? <PrinterIcon width={14} />
+                            : <UsersIcon width={14} />}
                       isDisabled
                     >
                       <option value={DELIVERY_SMS}>{t.modal.methods.sms}</option>
                       <option value={DELIVERY_EMAIL}>{t.modal.methods.email}</option>
+                      <option value={DELIVERY_MANUAL}>{t.modal.methods.manual || "Manual"}</option>
                       <option value={DELIVERY_OPERATOR}>{t.modal.methods.operator}</option>
                     </AppSelect>
                   </Box>
-                  {(selectedGroups[0]?.deliveryMethod || DELIVERY_SMS) !== DELIVERY_OPERATOR ? (
+                  {(selectedGroups[0]?.deliveryMethod || DELIVERY_SMS) !== DELIVERY_OPERATOR
+                  && (selectedGroups[0]?.deliveryMethod || DELIVERY_SMS) !== DELIVERY_MANUAL ? (
                     <Box>
                       <Text fontSize="14px" fontWeight="700" color="#12161b" mb={1.5}>{t.modal.deliveryTime}</Text>
                       <AppSelect

@@ -12,6 +12,16 @@ const baseButtonStyles = {
   _focusVisible: {
     outline: "none",
     boxShadow: uiShadows.focus
+  },
+  _disabled: {
+    opacity: 0.5,
+    cursor: "not-allowed",
+    pointerEvents: "none",
+    bg: "#e5e7eb",
+    color: "#9ca3af",
+    borderColor: "#d1d5db",
+    boxShadow: "none",
+    transform: "none"
   }
 };
 

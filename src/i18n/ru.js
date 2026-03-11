@@ -135,6 +135,35 @@ const ru = {
         "Клиентам ничего отправляться не будет, вы можете распечатать все QR-коды и передать их самостоятельно",
       helperSelf:
         "Этот заказ eSIM не привязывается к клиенту. QR-код и ссылки для установки будут отправлены вам сразу. После оформления проверьте страницу Мои заказы.",
+      selfOrder: {
+        phoneLabel: "Куда отправить eSIM?",
+        phonePlaceholder: "998 XX XXX XX XX",
+        quantityLabel: "Сколько eSIM?",
+        deliveryLabel: "Способ доставки",
+        quantityHint: "от 1 до 30",
+        smsDeliveryNote: "Будет отправлено по SMS",
+        manualDeliveryNote: "Ссылки для ручной раздачи"
+      },
+      result: {
+        title: "eSIM успешно заказан!",
+        titleMultiple: "{count} eSIM заказано!",
+        smsSent: "eSIM отправлен на номер {phone} через SMS",
+        copyLink: "Копировать",
+        copied: "Скопировано!",
+        linkLabel: "Ссылка для установки",
+        qrCodeLabel: "QR-код",
+        close: "Закрыть",
+        newOrder: "Новый заказ",
+        manualNote: "Ссылки готовы для копирования"
+      },
+      loading: "Загрузка...",
+      processing: "Обработка заказа...",
+      error: {
+        title: "Произошла ошибка",
+        retry: "Повторить",
+        insufficientBalance: "Недостаточно средств на счете",
+        invalidPhone: "Неверный номер телефона"
+      },
       labels: {
         fullName: "Имя Фамилия",
         phone: "+998",
@@ -204,6 +233,64 @@ const ru = {
       email: "Email обязателен для отправки",
       group: "Для группового режима выберите группу",
       schedule: "Для планирования укажите дату/время"
+    }
+  },
+  groupOrderDetails: {
+    back: "Вернуться к заказам",
+    printAllQr: "Печать всех QR",
+    orderDate: "Дата заказа",
+    travelDates: "Поездка",
+    totalEsims: "Всего eSIM",
+    activated: "Активировано",
+    pending: "Ожидает",
+    problems: "Проблемы",
+    searchPlaceholder: "Поиск: имя, телефон, email, ICCID",
+    customers: "клиентов",
+    customer: "Клиент",
+    contact: "Контакт",
+    delivery: "Доставка",
+    esimStatus: "Статус eSIM",
+    dataUsage: "Данные",
+    noResults: "Клиенты не найдены",
+    resend: "Отправить повторно",
+    viewDetails: "Подробнее",
+    close: "Закрыть",
+    pause: "Приостановить",
+    topup: "Пополнить",
+    installLinks: "Ссылки для установки",
+    esimDetails: "Данные eSIM",
+    package: "Пакет",
+    transactionNo: "Транзакция",
+    orderNo: "Номер заказа",
+    activatedAt: "Активирован",
+    installedAt: "Установлен",
+    expiresAt: "Срок действия",
+    phone: "Телефон",
+    email: "Email",
+    deliveryMethod: "Способ доставки",
+    deliveryStatuses: {
+      pending: "Ожидает",
+      sent: "Отправлено",
+      delivered: "Доставлено",
+      failed: "Ошибка",
+      bounced: "Возврат"
+    },
+    esimStatuses: {
+      NOT_ACTIVE: "Ожидает",
+      IN_USE: "Активен",
+      EXPIRED: "Истек",
+      DEPLETED: "Данные исчерпаны",
+      CANCELLED: "Отменён",
+      FAILED: "Ошибка"
+    },
+    loadError: "Ошибка загрузки данных заказа",
+    notFound: "Заказ не найден",
+    toast: {
+      copySuccess: "Скопировано",
+      copyError: "Ошибка копирования",
+      resendSuccess: "Отправлено повторно",
+      resendError: "Ошибка повторной отправки",
+      printStarted: "Окно печати открыто"
     }
   },
   status: {

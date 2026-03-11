@@ -1,4 +1,5 @@
-import { Box, Input, Text } from "@chakra-ui/react";
+import { Box, HStack, Input, Text } from "@chakra-ui/react";
+import { CheckCircleIcon, ExclamationCircleIcon, ExclamationTriangleIcon } from "@heroicons/react/24/solid";
 import { forwardRef } from "react";
 import { uiColors, uiControlSizes, uiRadii, uiShadows } from "../../design-system/tokens";
 
@@ -30,25 +31,29 @@ export const AppInput = forwardRef(
         borderColor: uiColors.border,
         hoverBorderColor: uiColors.borderStrong,
         focusBorderColor: uiColors.accent,
-        focusShadow: uiShadows.focus
+        focusShadow: uiShadows.focus,
+        bg: "white"
       },
       success: {
-        borderColor: "#86efac",
-        hoverBorderColor: "#4ade80",
+        borderColor: uiColors.success,
+        hoverBorderColor: "#15803d",
         focusBorderColor: uiColors.success,
-        focusShadow: "0 0 0 3px rgba(22, 163, 74, 0.25)"
+        focusShadow: "0 0 0 3px rgba(22, 163, 74, 0.15)",
+        bg: "white"
       },
       warning: {
-        borderColor: "#fcd34d",
-        hoverBorderColor: "#f59e0b",
+        borderColor: uiColors.warning,
+        hoverBorderColor: "#b45309",
         focusBorderColor: uiColors.warning,
-        focusShadow: "0 0 0 3px rgba(217, 119, 6, 0.24)"
+        focusShadow: "0 0 0 3px rgba(217, 119, 6, 0.15)",
+        bg: "white"
       },
       error: {
-        borderColor: "#fca5a5",
-        hoverBorderColor: uiColors.error,
+        borderColor: uiColors.error,
+        hoverBorderColor: "#b91c1c",
         focusBorderColor: uiColors.error,
-        focusShadow: "0 0 0 3px rgba(220, 38, 38, 0.22)"
+        focusShadow: "0 0 0 3px rgba(220, 38, 38, 0.15)",
+        bg: "white"
       }
     };
     const activeStatus = statusStyles[resolvedStatus] || statusStyles.default;
@@ -90,9 +95,9 @@ export const AppInput = forwardRef(
             ref={ref}
             h={controlSize.h}
             borderRadius={uiRadii.md}
-            borderWidth="1px"
+            borderWidth="1.5px"
             borderColor={activeStatus.borderColor}
-            bg="white"
+            bg={activeStatus.bg}
             color={uiColors.textPrimary}
             fontSize={controlSize.fontSize}
             pl={leftElement ? "40px" : "12px"}
@@ -107,6 +112,13 @@ export const AppInput = forwardRef(
               borderColor: activeStatus.focusBorderColor,
               boxShadow: activeStatus.focusShadow,
               outline: "none"
+            }}
+            _disabled={{
+              bg: "#f3f4f6",
+              borderColor: "#e5e7eb",
+              color: "#9ca3af",
+              cursor: "not-allowed",
+              opacity: 0.7
             }}
             {...inputProps}
           />
@@ -128,18 +140,34 @@ export const AppInput = forwardRef(
           )}
         </Box>
         {error && (
-          <Text fontSize="12px" color={uiColors.error} mt="6px">
-            {error}
-          </Text>
+          <HStack spacing={1.5} mt="6px" align="center">
+            <ExclamationCircleIcon width={14} color={uiColors.error} style={{ flexShrink: 0 }} />
+            <Text fontSize="12px" color={uiColors.error}>
+              {error}
+            </Text>
+          </HStack>
         )}
         {helperText && !error && (
-          <Text
-            fontSize="12px"
-            color={resolvedStatus === "success" ? uiColors.success : uiColors.textMuted}
-            mt="6px"
-          >
-            {helperText}
-          </Text>
+          <HStack spacing={1.5} mt="6px" align="center">
+            {resolvedStatus === "success" && (
+              <CheckCircleIcon width={14} color={uiColors.success} style={{ flexShrink: 0 }} />
+            )}
+            {resolvedStatus === "warning" && (
+              <ExclamationTriangleIcon width={14} color={uiColors.warning} style={{ flexShrink: 0 }} />
+            )}
+            <Text
+              fontSize="12px"
+              color={
+                resolvedStatus === "success"
+                  ? uiColors.success
+                  : resolvedStatus === "warning"
+                    ? uiColors.warning
+                    : uiColors.textMuted
+              }
+            >
+              {helperText}
+            </Text>
+          </HStack>
         )}
       </Box>
     );
