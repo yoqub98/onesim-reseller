@@ -377,6 +377,11 @@ function CatalogPage() {
         }}
         onGroupRemove={(groupId) => setSelectedGroups((prev) => prev.filter((group) => group.id !== groupId))}
         onConfirm={onConfirmBuy}
+        partner={partner}
+        onOrderComplete={(result) => {
+          // Optional: Handle order completion (refresh data, show notification, etc.)
+          console.log("Order completed:", result);
+        }}
       />
     </VStack>
   );

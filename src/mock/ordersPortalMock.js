@@ -108,7 +108,6 @@ export const portalPackagesMock = [
     hotspotSupported: true,
     code: "EUR-005-30",
     priceUzs: 90000
-  }
   },
   {
     id: "pkg-sa-20-15",

@@ -26,6 +26,7 @@ import { uiColors, uiShadows } from "../../design-system/tokens";
 import { formatMoneyFromUzs, formatMoneyPartsFromUzs } from "../../utils/currency";
 import { formatPackageDataLabel } from "../../utils/package";
 import CustomerInlineForm from "./CustomerInlineForm";
+import SelfOrderForm from "./SelfOrderForm";
 
 function OrderModal({
   t,
@@ -39,6 +40,7 @@ function OrderModal({
   groupCandidateId,
   operatorHelperText,
   selfOrderHelperText,
+  partner,
   onClose,
   onTabChange,
   onCustomerAdd,
@@ -48,7 +50,8 @@ function OrderModal({
   onGroupCandidateChange,
   onGroupAdd,
   onGroupRemove,
-  onConfirm
+  onConfirm,
+  onOrderComplete
 }) {
   if (!buyPlan) {
     return null;
@@ -299,23 +302,13 @@ function OrderModal({
               ) : null}
             </>
           ) : activeOrderTab === "self" ? (
-            <SurfaceCard p={4} borderRadius="12px" boxShadow={uiShadows.soft}>
-              <HStack
-                borderWidth="1px"
-                borderColor="#d1d9e4"
-                borderRadius="10px"
-                bg="#f8fafc"
-                px={3}
-                py={3}
-                align="start"
-                spacing={2}
-              >
-                <InformationCircleIcon width={18} color="#62748e" />
-                <Text fontSize="sm" color="#475569" lineHeight="1.45">
-                  {selfOrderHelperText}
-                </Text>
-              </HStack>
-            </SurfaceCard>
+            <SelfOrderForm
+              t={t}
+              partner={partner}
+              buyPlan={buyPlan}
+              onOrderComplete={onOrderComplete}
+              onClose={onClose}
+            />
           ) : (
             <>
               <Flex justify="space-between" align="center" mb={5}>

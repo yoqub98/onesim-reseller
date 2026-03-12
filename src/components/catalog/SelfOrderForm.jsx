@@ -18,11 +18,11 @@ import {
   PhoneIcon
 } from "@heroicons/react/24/outline";
 import { CheckIcon } from "@heroicons/react/24/solid";
-import { AppButton, AppInput, AppSelect, SurfaceCard } from "../ui";
+import { AppButton, AppInput, SurfaceCard } from "../ui";
 import { DELIVERY_MANUAL, DELIVERY_SMS } from "../../constants/delivery";
 import { uiColors, uiShadows } from "../../design-system/tokens";
 import { ordersService } from "../../services/ordersService";
-import QRCode from "qrcode.react";
+import { QRCodeSVG } from "qrcode.react";
 
 /**
  * SelfOrderForm - Form for Mode 1 (Tur agent nomiga)
@@ -288,7 +288,7 @@ function SelfOrderResult({ t, result, onClose, onNewOrder }) {
               borderWidth="1px"
               borderColor={uiColors.border}
             >
-              <QRCode
+              <QRCodeSVG
                 value={firstOrder.activation_code || firstOrder.qr_code_data}
                 size={160}
                 level="M"
