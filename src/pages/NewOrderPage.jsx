@@ -43,11 +43,11 @@ const EMPTY_LIST = [];
 // - Writes order via ordersService.createOrder
 // - Input/output contract: src/services/CONTRACTS.md
 async function loadNewOrderData(params) {
-  const [plans, groups] = await Promise.all([
+  const [plansResult, groups] = await Promise.all([
     catalogService.getPlans({ usdToUzsRate: params?.usdToUzsRate }),
     groupsService.listGroups()
   ]);
-  return { plans, groups };
+  return { plans: plansResult.plans || [], groups };
 }
 
 function NewOrderPage() {
