@@ -84,17 +84,23 @@ export class EsimAccessClient {
    * @returns Balance in units × 10000 (940000 = $94.00)
    */
   async queryBalance(): Promise<number> {
+    console.log('[eSIMAccess] Querying balance...');
+    console.log('[eSIMAccess] Access code present:', !!this.accessCode);
+
     const response = await this.request<BalanceQueryResponse>(
       '/api/v1/open/balance/query',
       'POST',
       {}
     );
 
-    if (response.code !== '0') {
-      throw new Error(`Balance query failed: ${response.msg}`);
+    console.log('[eSIMAccess] Balance response:', JSON.stringify(response));
+
+    // Handle both success code formats: '0' or 'Success'
+    if (response.code !== '0' && response.code !== 'Success') {
+      throw new Error(`Balance query failed: ${response.msg || response.code || 'Unknown error'}`);
     }
 
-    return response.obj.balance;
+    return response.obj?.balance ?? 0;
   }
 
   /**
