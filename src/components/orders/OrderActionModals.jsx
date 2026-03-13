@@ -1,24 +1,41 @@
 // Renders order detail modals for self and group tabs — used in OrdersPage
+import { useState } from "react";
 import {
+  ArrowPathIcon,
+  CheckIcon,
   ClipboardDocumentIcon,
   DevicePhoneMobileIcon,
   EnvelopeIcon,
+  GlobeAltIcon,
+  PaperAirplaneIcon,
   PrinterIcon,
   XMarkIcon
 } from "@heroicons/react/24/outline";
-import { Badge, Box, Grid, Heading, HStack, Table, Text, VStack } from "@chakra-ui/react";
+import { Badge, Box, Grid, Heading, HStack, Spinner, Table, Text, VStack } from "@chakra-ui/react";
+import { QRCodeSVG } from "qrcode.react";
 import { AppButton, AppIconButton, SurfaceCard } from "../ui";
 import { DELIVERY_EMAIL, DELIVERY_MANUAL, DELIVERY_SMS } from "../../constants/delivery";
 import { uiColors } from "../../design-system/tokens";
-import { formatMoneyFromUzs } from "../../utils/currency";
+import { formatMoneyFromUsd, formatMoneyFromUzs } from "../../utils/currency";
 import StatusPill from "./StatusPill";
 
 function formatUsage(used, total) {
-  if (total === 999) {
-    return `${Number(used || 0).toFixed(1)} / INFINITY GB`;
+  if (total === 999 || total === -1) {
+    return `${Number(used || 0).toFixed(1)} / ∞ GB`;
   }
 
-  return `${Number(used || 0).toFixed(1)} / ${Number(total || 0)} GB`;
+  return `${Number(used || 0).toFixed(1)} / ${Number(total || 0).toFixed(1)} GB`;
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return "-";
+  return new Date(dateStr).toLocaleDateString("uz-UZ", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
 }
 
 function modalBackdrop(onClose) {
@@ -34,20 +51,95 @@ function modalBackdrop(onClose) {
   );
 }
 
-function SelfOrderModal({ order, t, statusLabels, onClose, onCopy }) {
+function InfoRow({ label, value, mono = false, copyable = false, onCopy }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    if (!value) return;
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      if (onCopy) onCopy(value, label);
+    } catch { /* ignore */ }
+  };
+
+  return (
+    <HStack justify="space-between" py={2} borderBottomWidth="1px" borderColor={uiColors.border}>
+      <Text fontSize="sm" color={uiColors.textMuted}>{label}</Text>
+      <HStack spacing={2}>
+        <Text
+          fontSize="sm"
+          fontWeight="600"
+          color={uiColors.textPrimary}
+          fontFamily={mono ? "mono" : "inherit"}
+        >
+          {value || "-"}
+        </Text>
+        {copyable && value && (
+          <AppIconButton
+            aria-label="Copy"
+            icon={copied ? <CheckIcon width={14} color="#16a34a" /> : <ClipboardDocumentIcon width={14} />}
+            size="xs"
+            variant="ghost"
+            onClick={handleCopy}
+          />
+        )}
+      </HStack>
+    </HStack>
+  );
+}
+
+function SelfOrderModal({ order, t, statusLabels, currency, onClose, onCopy, onRefreshUsage, onResendSms }) {
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+
   if (!order) {
     return null;
   }
 
-  const qrData = `LPA:1$esim.onesim.uz$${order.iccid}`;
+  const qrData = order.activationCode || order.qrCodeData || `LPA:1$esim.onesim.uz$${order.iccid}`;
+  const pkg = order.package;
+  const deliveryStatus = order.deliveryStatus?.status || order.deliveryStatus || "pending";
+
+  const handleRefresh = async () => {
+    if (!onRefreshUsage) return;
+    setIsRefreshing(true);
+    try {
+      await onRefreshUsage(order.id);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (!onResendSms || !order.customerPhone) return;
+    setIsResending(true);
+    try {
+      await onResendSms(order.id);
+    } finally {
+      setIsResending(false);
+    }
+  };
 
   return (
     <>
       {modalBackdrop(onClose)}
-      <Box position="fixed" inset={0} zIndex={50} display="grid" placeItems="center" p={4}>
-        <SurfaceCard w="full" maxW="520px" overflow="hidden" borderRadius="14px">
+      <Box position="fixed" inset={0} zIndex={50} display="grid" placeItems="center" p={4} overflowY="auto">
+        <SurfaceCard w="full" maxW="580px" overflow="hidden" borderRadius="14px" my={4}>
+          {/* Header */}
           <HStack px={5} py={4} justify="space-between" borderBottomWidth="1px" borderColor={uiColors.border}>
-            <Heading fontSize="lg" color={uiColors.textPrimary}>{t.title}</Heading>
+            <Box>
+              <Heading fontSize="lg" color={uiColors.textPrimary}>{t.title}</Heading>
+              {pkg && (
+                <HStack spacing={2} mt={1}>
+                  <GlobeAltIcon width={14} color={uiColors.textMuted} />
+                  <Text fontSize="sm" color={uiColors.textSecondary}>
+                    {pkg.destination || pkg.name} • {pkg.dataGb}GB • {pkg.durationDays} {t.validity?.toLowerCase() || "kun"}
+                  </Text>
+                </HStack>
+              )}
+            </Box>
             <AppIconButton
               aria-label={t.close}
               icon={<XMarkIcon width={18} />}
@@ -55,39 +147,20 @@ function SelfOrderModal({ order, t, statusLabels, onClose, onCopy }) {
               onClick={onClose}
             />
           </HStack>
+
           <VStack spacing={5} align="stretch" p={5}>
+            {/* QR Code Section */}
             <VStack spacing={3}>
               <Box p={3} borderWidth="1px" borderColor={uiColors.border} borderRadius="14px" bg="white">
-                <Box
-                  as="img"
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(qrData)}`}
-                  alt={t.qrAlt}
-                  w="160px"
-                  h="160px"
-                />
+                <QRCodeSVG value={qrData} size={160} level="M" />
               </Box>
               <Text fontSize="sm" color={uiColors.textSecondary} textAlign="center">
                 {t.helper}
               </Text>
             </VStack>
 
-            <SurfaceCard p={3} borderRadius="10px">
-              <HStack justify="space-between" align="start">
-                <Box>
-                  <Text fontSize="xs" color={uiColors.textMuted} textTransform="uppercase" fontWeight="700">
-                    {t.iccid}
-                  </Text>
-                  <Text mt={1} fontFamily="mono" color={uiColors.textPrimary}>{order.iccid}</Text>
-                </Box>
-                <AppIconButton
-                  aria-label={t.copy}
-                  icon={<ClipboardDocumentIcon width={16} />}
-                  onClick={() => onCopy(order.iccid, t.iccid)}
-                />
-              </HStack>
-            </SurfaceCard>
-
-            <Grid templateColumns={{ base: "1fr", sm: "1fr 1fr" }} gap={3}>
+            {/* Status & Usage Row */}
+            <Grid templateColumns="1fr 1fr" gap={3}>
               <SurfaceCard p={3} borderRadius="10px">
                 <Text fontSize="xs" color={uiColors.textMuted} textTransform="uppercase" fontWeight="700">
                   {t.status}
@@ -97,15 +170,109 @@ function SelfOrderModal({ order, t, statusLabels, onClose, onCopy }) {
                 </Box>
               </SurfaceCard>
               <SurfaceCard p={3} borderRadius="10px">
-                <Text fontSize="xs" color={uiColors.textMuted} textTransform="uppercase" fontWeight="700">
-                  {t.traffic}
-                </Text>
-                <Text mt={2} color={uiColors.textPrimary} fontWeight="600">
+                <HStack justify="space-between" mb={1}>
+                  <Text fontSize="xs" color={uiColors.textMuted} textTransform="uppercase" fontWeight="700">
+                    {t.traffic}
+                  </Text>
+                  {onRefreshUsage && (
+                    <AppIconButton
+                      aria-label={t.refreshUsage}
+                      icon={isRefreshing ? <Spinner size="xs" /> : <ArrowPathIcon width={14} />}
+                      size="xs"
+                      variant="ghost"
+                      onClick={handleRefresh}
+                      isDisabled={isRefreshing}
+                    />
+                  )}
+                </HStack>
+                <Text color={uiColors.textPrimary} fontWeight="600">
                   {formatUsage(order.dataUsageGb, order.totalDataGb)}
                 </Text>
               </SurfaceCard>
             </Grid>
+
+            {/* Details Section */}
+            <SurfaceCard p={4} borderRadius="10px">
+              <Text fontSize="xs" color={uiColors.textMuted} textTransform="uppercase" fontWeight="700" mb={2}>
+                {t.iccid} & {t.shortUrl || "Link"}
+              </Text>
+              <InfoRow label={t.iccid} value={order.iccid} mono copyable onCopy={onCopy} />
+              {order.shortUrl && (
+                <InfoRow label={t.shortUrl} value={order.shortUrl} mono copyable onCopy={onCopy} />
+              )}
+              <InfoRow label={t.purchaseDate} value={formatDate(order.purchasedAt)} />
+              {order.expiryDate && (
+                <InfoRow label={t.expiryDate} value={formatDate(order.expiryDate)} />
+              )}
+              {order.smdpStatus && (
+                <InfoRow label={t.smdpStatus} value={order.smdpStatus} />
+              )}
+            </SurfaceCard>
+
+            {/* Delivery Section */}
+            {order.deliveryMethod && (
+              <SurfaceCard p={4} borderRadius="10px">
+                <HStack justify="space-between" mb={2}>
+                  <Text fontSize="xs" color={uiColors.textMuted} textTransform="uppercase" fontWeight="700">
+                    {t.deliveryStatus}
+                  </Text>
+                  <Badge
+                    bg={deliveryStatus === "sent" || deliveryStatus === "delivered" ? "#dcfce7" : "#fff0e8"}
+                    color={deliveryStatus === "sent" || deliveryStatus === "delivered" ? "#166534" : "#a65f00"}
+                    borderWidth="1px"
+                    borderColor={deliveryStatus === "sent" || deliveryStatus === "delivered" ? "#bbf7d0" : "#ffb085"}
+                    textTransform="none"
+                    fontSize="xs"
+                  >
+                    {t.deliveryStatuses?.[deliveryStatus] || deliveryStatus}
+                  </Badge>
+                </HStack>
+                <InfoRow
+                  label={t.deliveryMethod}
+                  value={t.deliveryMethods?.[order.deliveryMethod] || order.deliveryMethod}
+                />
+                {order.customerPhone && (
+                  <InfoRow label={t.customerPhone} value={order.customerPhone} />
+                )}
+                {onResendSms && order.customerPhone && (
+                  <Box mt={3}>
+                    <AppButton
+                      variant="soft"
+                      size="sm"
+                      leftIcon={isResending ? <Spinner size="xs" /> : <PaperAirplaneIcon width={14} />}
+                      onClick={handleResend}
+                      isDisabled={isResending}
+                    >
+                      {isResending ? t.resending : t.resendSms}
+                    </AppButton>
+                  </Box>
+                )}
+              </SurfaceCard>
+            )}
+
+            {/* Price Section */}
+            {(order.retailPriceUsd || order.partnerPaidUsd) && (
+              <SurfaceCard p={4} borderRadius="10px">
+                <Text fontSize="xs" color={uiColors.textMuted} textTransform="uppercase" fontWeight="700" mb={2}>
+                  {t.priceInfo}
+                </Text>
+                <InfoRow
+                  label={t.retailPrice}
+                  value={formatMoneyFromUsd(order.retailPriceUsd || 0, currency)}
+                />
+                <InfoRow
+                  label={t.partnerPrice}
+                  value={formatMoneyFromUsd(order.partnerPaidUsd || 0, currency)}
+                />
+                <InfoRow
+                  label={t.discount}
+                  value={`${order.discountRate || 0}% (${formatMoneyFromUsd(order.discountAmountUsd || 0, currency)})`}
+                />
+              </SurfaceCard>
+            )}
           </VStack>
+
+          {/* Footer */}
           <Box px={5} py={4} borderTopWidth="1px" borderColor={uiColors.border} bg={uiColors.surfaceSoft}>
             <AppButton variant="dark" w="full" onClick={onClose}>
               {t.close}
@@ -240,7 +407,9 @@ function OrderActionModals({
   currency,
   onCloseSelf,
   onCloseGroup,
-  onCopy
+  onCopy,
+  onRefreshUsage,
+  onResendSms
 }) {
   return (
     <>
@@ -248,8 +417,11 @@ function OrderActionModals({
         order={selfOrder}
         t={tSelf}
         statusLabels={statusLabels}
+        currency={currency}
         onClose={onCloseSelf}
         onCopy={onCopy}
+        onRefreshUsage={onRefreshUsage}
+        onResendSms={onResendSms}
       />
       <GroupOrderModal
         order={groupOrder}

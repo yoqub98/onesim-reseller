@@ -1,10 +1,23 @@
-import { PhoneIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { ArrowTopRightOnSquareIcon, PhoneIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { Box, HStack, SimpleGrid, Text, VStack } from "@chakra-ui/react";
+import { useNavigate } from "react-router-dom";
 import { uiColors } from "../../design-system/tokens";
-import { AppButton, AppIconButton, SurfaceCard } from "../ui";
+import { AppButton, AppIconButton, EsimStatusBadge, SurfaceCard } from "../ui";
 
 function GroupDetailsModal({ group, t, onClose }) {
+  const navigate = useNavigate();
+
   if (!group) return null;
+
+  const isEsimOrdered = group.esimOrderStatus === "ordered";
+  const hasGroupOrderId = Boolean(group.groupOrderId);
+
+  const handleViewFullOrder = () => {
+    if (hasGroupOrderId) {
+      onClose();
+      navigate(`/orders/group/${group.groupOrderId}`);
+    }
+  };
 
   return (
     <>
@@ -42,9 +55,22 @@ function GroupDetailsModal({ group, t, onClose }) {
               <SurfaceCard borderRadius="12px" overflow="hidden">
                 <VStack align="stretch" spacing={0}>
                   {(group.members || []).map((member, index) => (
-                    <HStack key={`${group.id}-${member.name}-${index}`} px={4} py={3.5} justify="space-between" align="start">
-                      <Box>
-                        <Text color={uiColors.textPrimary} fontWeight="600">{member.name}</Text>
+                    <HStack
+                      key={`${group.id}-${member.name}-${index}`}
+                      px={4}
+                      py={3.5}
+                      justify="space-between"
+                      align="center"
+                      borderBottomWidth={index < (group.members?.length || 0) - 1 ? "1px" : "0"}
+                      borderColor={uiColors.border}
+                    >
+                      <Box flex={1}>
+                        <HStack spacing={2} align="center">
+                          <Text color={uiColors.textPrimary} fontWeight="600">{member.name}</Text>
+                          {isEsimOrdered && member.esimStatus && (
+                            <EsimStatusBadge status={member.esimStatus} size="xs" />
+                          )}
+                        </HStack>
                         <Text color={uiColors.textSecondary} fontSize="sm">{member.email || "--"}</Text>
                       </Box>
                       <HStack spacing={1.5} color={uiColors.textSecondary}>
@@ -58,7 +84,18 @@ function GroupDetailsModal({ group, t, onClose }) {
             </Box>
           </VStack>
 
-          <HStack px={5} py={4} borderTopWidth="1px" borderColor={uiColors.border} justify="end" bg={uiColors.surfaceSoft}>
+          <HStack px={5} py={4} borderTopWidth="1px" borderColor={uiColors.border} justify="space-between" bg={uiColors.surfaceSoft}>
+            <Box>
+              {isEsimOrdered && hasGroupOrderId && (
+                <AppButton
+                  variant="primary"
+                  leftIcon={<ArrowTopRightOnSquareIcon width={14} />}
+                  onClick={handleViewFullOrder}
+                >
+                  {t.actions?.viewFullOrder || "To'liq buyurtmani ko'rish"}
+                </AppButton>
+              )}
+            </Box>
             <AppButton variant="dark" onClick={onClose}>{t.actions.close}</AppButton>
           </HStack>
         </SurfaceCard>

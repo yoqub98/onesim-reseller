@@ -1,6 +1,7 @@
-import { Box, Input, Text } from "@chakra-ui/react";
+import { Box, HStack, Input, Text } from "@chakra-ui/react";
+import { CheckCircleIcon, ExclamationCircleIcon, ExclamationTriangleIcon } from "@heroicons/react/24/solid";
 import { forwardRef } from "react";
-import { uiColors, uiRadii } from "../../design-system/tokens";
+import { uiColors, uiControlSizes, uiRadii, uiShadows } from "../../design-system/tokens";
 
 /**
  * AppInput - Reusable input component matching the design system
@@ -11,24 +12,67 @@ export const AppInput = forwardRef(
     {
       label,
       error,
+      status = "default",
+      size = "md",
       helperText,
       leftElement,
       rightElement,
+      isRequired,
+      rightElementPointerEvents = "auto",
       containerProps,
       ...inputProps
     },
     ref
   ) => {
+    const resolvedStatus = error ? "error" : status;
+    const controlSize = uiControlSizes[size] || uiControlSizes.md;
+    const statusStyles = {
+      default: {
+        borderColor: uiColors.border,
+        hoverBorderColor: uiColors.borderStrong,
+        focusBorderColor: uiColors.accent,
+        focusShadow: uiShadows.focus,
+        bg: "white"
+      },
+      success: {
+        borderColor: uiColors.success,
+        hoverBorderColor: "#15803d",
+        focusBorderColor: uiColors.success,
+        focusShadow: "0 0 0 3px rgba(22, 163, 74, 0.15)",
+        bg: "white"
+      },
+      warning: {
+        borderColor: uiColors.warning,
+        hoverBorderColor: "#b45309",
+        focusBorderColor: uiColors.warning,
+        focusShadow: "0 0 0 3px rgba(217, 119, 6, 0.15)",
+        bg: "white"
+      },
+      error: {
+        borderColor: uiColors.error,
+        hoverBorderColor: "#b91c1c",
+        focusBorderColor: uiColors.error,
+        focusShadow: "0 0 0 3px rgba(220, 38, 38, 0.15)",
+        bg: "white"
+      }
+    };
+    const activeStatus = statusStyles[resolvedStatus] || statusStyles.default;
+
     return (
       <Box {...containerProps}>
         {label && (
           <Text
-            fontSize="14px"
-            fontWeight="500"
+            fontSize="13px"
+            fontWeight="600"
             color={uiColors.textPrimary}
             mb="8px"
           >
             {label}
+            {isRequired ? (
+              <Text as="span" color={uiColors.error} ml={1}>
+                *
+              </Text>
+            ) : null}
           </Text>
         )}
         <Box position="relative">
@@ -49,27 +93,32 @@ export const AppInput = forwardRef(
           )}
           <Input
             ref={ref}
-            h="44px"
-            borderRadius={uiRadii.sm}
-            borderWidth="1px"
-            borderColor={error ? "#ef4444" : uiColors.border}
-            bg="white"
+            h={controlSize.h}
+            borderRadius={uiRadii.md}
+            borderWidth="1.5px"
+            borderColor={activeStatus.borderColor}
+            bg={activeStatus.bg}
             color={uiColors.textPrimary}
-            fontSize="14px"
+            fontSize={controlSize.fontSize}
             pl={leftElement ? "40px" : "12px"}
             pr={rightElement ? "40px" : "12px"}
             _placeholder={{
               color: uiColors.textMuted
             }}
             _hover={{
-              borderColor: error ? "#ef4444" : uiColors.borderStrong
+              borderColor: activeStatus.hoverBorderColor
             }}
-            _focus={{
-              borderColor: error ? "#ef4444" : uiColors.accent,
-              boxShadow: error
-                ? "0 0 0 1px #ef4444"
-                : `0 0 0 1px ${uiColors.accent}`,
+            _focusVisible={{
+              borderColor: activeStatus.focusBorderColor,
+              boxShadow: activeStatus.focusShadow,
               outline: "none"
+            }}
+            _disabled={{
+              bg: "#f3f4f6",
+              borderColor: "#e5e7eb",
+              color: "#9ca3af",
+              cursor: "not-allowed",
+              opacity: 0.7
             }}
             {...inputProps}
           />
@@ -83,6 +132,7 @@ export const AppInput = forwardRef(
               alignItems="center"
               color={uiColors.textMuted}
               cursor="pointer"
+              pointerEvents={rightElementPointerEvents}
               zIndex={1}
             >
               {rightElement}
@@ -90,14 +140,34 @@ export const AppInput = forwardRef(
           )}
         </Box>
         {error && (
-          <Text fontSize="13px" color="#ef4444" mt="6px">
-            {error}
-          </Text>
+          <HStack spacing={1.5} mt="6px" align="center">
+            <ExclamationCircleIcon width={14} color={uiColors.error} style={{ flexShrink: 0 }} />
+            <Text fontSize="12px" color={uiColors.error}>
+              {error}
+            </Text>
+          </HStack>
         )}
         {helperText && !error && (
-          <Text fontSize="13px" color={uiColors.textMuted} mt="6px">
-            {helperText}
-          </Text>
+          <HStack spacing={1.5} mt="6px" align="center">
+            {resolvedStatus === "success" && (
+              <CheckCircleIcon width={14} color={uiColors.success} style={{ flexShrink: 0 }} />
+            )}
+            {resolvedStatus === "warning" && (
+              <ExclamationTriangleIcon width={14} color={uiColors.warning} style={{ flexShrink: 0 }} />
+            )}
+            <Text
+              fontSize="12px"
+              color={
+                resolvedStatus === "success"
+                  ? uiColors.success
+                  : resolvedStatus === "warning"
+                    ? uiColors.warning
+                    : uiColors.textMuted
+              }
+            >
+              {helperText}
+            </Text>
+          </HStack>
         )}
       </Box>
     );

@@ -45,6 +45,45 @@ export const portalPackagesMock = [
     priceUzs: 150000
   },
   {
+    id: "pkg-it-10-30",
+    name: "Italy 10GB",
+    destination: "Italy",
+    countryCode: "IT",
+    dataGb: 10,
+    validityDays: 30,
+    speed: "4G/LTE",
+    operators: ["TIM", "Vodafone IT"],
+    hotspotSupported: true,
+    code: "ITA-010-30",
+    priceUzs: 130000
+  },
+  {
+    id: "pkg-ae-20-15",
+    name: "Dubai 20GB",
+    destination: "BAA (Dubai)",
+    countryCode: "AE",
+    dataGb: 20,
+    validityDays: 15,
+    speed: "5G",
+    operators: ["Etisalat", "du"],
+    hotspotSupported: true,
+    code: "UAE-020-15",
+    priceUzs: 230000
+  },
+  {
+    id: "pkg-tr-15-30",
+    name: "Turkey 15GB",
+    destination: "Turkiya",
+    countryCode: "TR",
+    dataGb: 15,
+    validityDays: 30,
+    speed: "4G/LTE",
+    operators: ["Turkcell", "Vodafone"],
+    hotspotSupported: true,
+    code: "TUR-015-30",
+    priceUzs: 182000
+  },
+  {
     id: "pkg-us-unl-30",
     name: "AQSH Cheksiz",
     destination: "AQSH",
@@ -69,6 +108,19 @@ export const portalPackagesMock = [
     hotspotSupported: true,
     code: "EUR-005-30",
     priceUzs: 90000
+  },
+  {
+    id: "pkg-sa-20-15",
+    name: "Saudi Arabia 20GB",
+    destination: "Saudi Arabia",
+    countryCode: "SA",
+    dataGb: 20,
+    validityDays: 15,
+    speed: "5G",
+    operators: ["STC", "Mobily"],
+    hotspotSupported: true,
+    code: "SA-020-15",
+    priceUzs: 286000
   }
 ];
 
@@ -98,9 +150,9 @@ export const portalOrdersMock = [
     id: "ORD-7828",
     orderType: "client",
     packageId: "pkg-tr-20-15",
-    customerName: "Elena Kim",
+    customerName: "Gulsanam Juraeva",
     customerPhone: "+998 93 987 65 43",
-    customerEmail: "elena.kim@example.com",
+    customerEmail: "gulsanam.juraeva@example.com",
     status: "pending",
     dataUsageGb: 0,
     totalDataGb: 20,
@@ -175,131 +227,223 @@ export const portalOrdersMock = [
   {
     id: "ORD-GRP-101",
     orderType: "group",
-    packageId: "pkg-tr-20-15",
-    groupName: "Dubay Safari",
+    packageId: "pkg-it-10-30",
+    groupName: "Italy Summer Trip 2025",
+    groupOrderId: "GO-2025-0142", // Links to groupOrdersMock
     status: "active",
     dataUsageGb: 0,
     totalDataGb: 0,
-    purchasedAt: daysAgo(1),
-    paymentTotalUzs: 360000,
+    purchasedAt: daysAgo(7),
+    paymentTotalUzs: 1300000,
     iccid: "MULTI",
     timeline: {
-      createdAt: daysAgo(1),
-      paymentClearedAt: daysAgo(1),
-      deliveredAt: daysAgo(1),
+      createdAt: daysAgo(7),
+      paymentClearedAt: daysAgo(7),
+      deliveredAt: daysAgo(7),
       activatedAt: null,
       lastSyncAt: hoursAgo(0.5)
     },
     groupMembers: [
       {
         id: "m1",
-        name: "Alisher V.",
-        phone: "+998 90 111 22 33",
+        name: "Bekzod Ergashev",
+        phone: "+998 90 101 12 34",
         deliveryMethod: "sms",
         deliveryStatus: "sent",
         status: "active",
         dataUsageGb: 2.5,
-        totalDataGb: 20,
-        iccid: "89998333111"
+        totalDataGb: 10,
+        iccid: "8939410000000000001"
       },
       {
         id: "m2",
-        name: "Jamshid K.",
-        email: "jamshid@example.com",
-        deliveryMethod: "email",
+        name: "Nilufar Abdullayeva",
+        phone: "+998 90 202 23 45",
+        deliveryMethod: "sms",
         deliveryStatus: "sent",
         status: "active",
-        dataUsageGb: 1.1,
-        totalDataGb: 20,
-        iccid: "89998333222"
+        dataUsageGb: 4.0,
+        totalDataGb: 10,
+        iccid: "8939410000000000002"
       },
       {
         id: "m3",
-        name: "Nargiza A.",
-        phone: "+998 90 333 44 55",
+        name: "Jasur Qodirov",
+        phone: "+998 90 303 34 56",
         deliveryMethod: "sms",
-        deliveryStatus: "pending",
-        status: "pending",
-        dataUsageGb: 0,
-        totalDataGb: 20,
-        iccid: "89998333333"
+        deliveryStatus: "sent",
+        status: "active",
+        dataUsageGb: 1.0,
+        totalDataGb: 10,
+        iccid: "8939410000000000003"
       }
     ]
   },
   {
     id: "ORD-GRP-102",
     orderType: "group",
-    packageId: "pkg-eu-5-30",
-    groupName: "IT Team Europe",
-    status: "active",
+    packageId: "pkg-ae-20-15",
+    groupName: "Dubai Business Conference",
+    groupOrderId: "GO-2025-0138", // Links to groupOrdersMock
+    status: "expired",
     dataUsageGb: 0,
     totalDataGb: 0,
-    purchasedAt: daysAgo(5),
-    paymentTotalUzs: 450000,
+    purchasedAt: daysAgo(14),
+    paymentTotalUzs: 1170000,
     iccid: "MULTI",
     timeline: {
-      createdAt: daysAgo(5),
-      paymentClearedAt: daysAgo(5),
-      deliveredAt: daysAgo(5),
+      createdAt: daysAgo(14),
+      paymentClearedAt: daysAgo(14),
+      deliveredAt: daysAgo(14),
       activatedAt: null,
       lastSyncAt: hoursAgo(2)
     },
     groupMembers: [
       {
         id: "g21",
-        name: "Developer 1",
-        email: "dev1@company.com",
+        name: "Otabek Shukurov",
+        email: "otabek.shukurov@onesim.uz",
         deliveryMethod: "email",
         deliveryStatus: "sent",
-        status: "active",
-        dataUsageGb: 2.3,
-        totalDataGb: 5,
-        iccid: "89998444555"
+        status: "expired",
+        dataUsageGb: 16.0,
+        totalDataGb: 20,
+        iccid: "8939710000000000001"
       },
       {
         id: "g22",
-        name: "Developer 2",
-        email: "dev2@company.com",
+        name: "Sardor Abdurahmonov",
+        email: "sardor.abdurahmonov@onesim.uz",
         deliveryMethod: "email",
         deliveryStatus: "sent",
-        status: "active",
-        dataUsageGb: 1.8,
-        totalDataGb: 5,
-        iccid: "89998444556"
+        status: "expired",
+        dataUsageGb: 12.0,
+        totalDataGb: 20,
+        iccid: "8939710000000000002"
       },
       {
         id: "g23",
-        name: "Developer 3",
-        email: "dev3@company.com",
+        name: "Nasiba Islomova",
+        email: "nasiba.islomova@onesim.uz",
         deliveryMethod: "email",
         deliveryStatus: "sent",
-        status: "active",
-        dataUsageGb: 0.9,
-        totalDataGb: 5,
-        iccid: "89998444557"
+        status: "expired",
+        dataUsageGb: 20.0,
+        totalDataGb: 20,
+        iccid: "8939710000000000003"
+      }
+    ]
+  },
+  {
+    id: "ORD-GRP-103",
+    orderType: "group",
+    packageId: "pkg-tr-15-30",
+    groupName: "Turkiya Sayohat - Iyun",
+    groupOrderId: "GO-2025-0145", // Links to groupOrdersMock
+    status: "pending",
+    dataUsageGb: 0,
+    totalDataGb: 0,
+    purchasedAt: daysAgo(2),
+    paymentTotalUzs: 2184000,
+    iccid: "MULTI",
+    timeline: {
+      createdAt: daysAgo(2),
+      paymentClearedAt: daysAgo(2),
+      deliveredAt: daysAgo(2),
+      activatedAt: null,
+      lastSyncAt: hoursAgo(1)
+    },
+    groupMembers: [
+      {
+        id: "t1",
+        name: "Aziz Karimov",
+        phone: "+998 90 111 22 33",
+        deliveryMethod: "manual",
+        deliveryStatus: "pending",
+        status: "pending",
+        dataUsageGb: 0,
+        totalDataGb: 15,
+        iccid: "8939860000000000001"
       },
       {
-        id: "g24",
-        name: "Developer 4",
-        email: "dev4@company.com",
-        deliveryMethod: "email",
+        id: "t2",
+        name: "Bobur Toshmatov",
+        phone: "+998 90 222 33 44",
+        deliveryMethod: "manual",
+        deliveryStatus: "pending",
+        status: "pending",
+        dataUsageGb: 0,
+        totalDataGb: 15,
+        iccid: "8939860000000000002"
+      }
+    ]
+  }
+  ,
+  {
+    id: "ORD-GRP-104",
+    orderType: "group",
+    packageId: "pkg-sa-20-15",
+    groupName: "Umra : Sentyabr 2025",
+    groupOrderId: "GO-2025-0150",
+    status: "scheduled",
+    dataUsageGb: 0,
+    totalDataGb: 0,
+    purchasedAt: daysAgo(210),
+    paymentTotalUzs: 2860000,
+    iccid: "MULTI",
+    timeline: {
+      createdAt: daysAgo(210),
+      paymentClearedAt: daysAgo(210),
+      deliveredAt: daysAgo(210),
+      activatedAt: null,
+      lastSyncAt: hoursAgo(2)
+    },
+    groupMembers: [
+      {
+        id: "sa1",
+        name: "Azizbek Jumanov",
+        phone: "+998 91 101 01 01",
+        deliveryMethod: "sms",
         deliveryStatus: "sent",
         status: "active",
-        dataUsageGb: 2.1,
-        totalDataGb: 5,
-        iccid: "89998444558"
+        dataUsageGb: 6,
+        totalDataGb: 20,
+        iccid: "8939900000000000001"
       },
       {
-        id: "g25",
-        name: "Developer 5",
-        email: "dev5@company.com",
-        deliveryMethod: "email",
+        id: "sa2",
+        name: "Nilufar Rashidova",
+        phone: "+998 91 202 02 02",
+        deliveryMethod: "sms",
         deliveryStatus: "sent",
         status: "active",
-        dataUsageGb: 1.4,
-        totalDataGb: 5,
-        iccid: "89998444559"
+        dataUsageGb: 5,
+        totalDataGb: 20,
+        iccid: "8939900000000000002"
+      },
+      {
+        id: "sa3",
+        name: "Shahzoda Qodirova",
+        phone: "+998 91 303 03 03",
+        deliveryMethod: "sms",
+        deliveryStatus: "sent",
+        status: "active",
+        dataUsageGb: 4,
+        totalDataGb: 20,
+        iccid: "8939900000000000003"
+      },
+      {
+        id: "sa4",
+        name: "Oybek Muhammedov",
+        phone: "+998 91 404 04 04",
+        deliveryMethod: "sms",
+        deliveryStatus: "sent",
+        status: "active",
+        dataUsageGb: 7,
+        totalDataGb: 20,
+        iccid: "8939900000000000004"
       }
     ]
   }
 ];
+

@@ -8,7 +8,8 @@ import {
   PaintBrushIcon,
   RectangleStackIcon,
   Squares2X2Icon,
-  UserGroupIcon
+  UserGroupIcon,
+  UsersIcon
 } from "@heroicons/react/24/outline";
 
 export const SIDEBAR_NAV_ITEMS = [
@@ -16,6 +17,7 @@ export const SIDEBAR_NAV_ITEMS = [
   { to: "/catalog", label: "eSIM Tariflar", icon: Squares2X2Icon },
   { to: "/orders", label: "Buyurtmalarim", icon: RectangleStackIcon },
   { to: "/groups", label: "Mijozlar Guruhlari", icon: UserGroupIcon },
+  { to: "/customers", label: "Mijozlar", icon: UsersIcon },
   { to: "/earnings", label: "Mening Daromadlarim", icon: BanknotesIcon },
   { to: "/design-system", label: "Design System", icon: PaintBrushIcon }
 ];

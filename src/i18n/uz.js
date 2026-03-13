@@ -138,6 +138,35 @@ const uz = {
         "Nothing will be sent to customers, you can print out all QR codes and handle delivering yourself",
       helperSelf:
         "Bu eSIM hech bir mijozga biriktirilmaydi. QR-kod va o'rnatish havolalari buyurtma tasdiqlangandan so'ng sizga darhol yuboriladi. Buyurtmadan keyin uni Mening buyurtmalarim sahifasida topasiz.",
+      selfOrder: {
+        phoneLabel: "eSIM qayerga yuborilsin?",
+        phonePlaceholder: "998 XX XXX XX XX",
+        quantityLabel: "Nechta eSIM?",
+        deliveryLabel: "Yetkazib berish usuli",
+        quantityHint: "1 dan 30 gacha",
+        smsDeliveryNote: "SMS orqali yuboriladi",
+        manualDeliveryNote: "Qo'lda tarqatish uchun linklar beriladi"
+      },
+      result: {
+        title: "eSIM muvaffaqiyatli buyurtma qilindi!",
+        titleMultiple: "{count} ta eSIM buyurtma qilindi!",
+        smsSent: "eSIM {phone} raqamiga SMS orqali yuborildi",
+        copyLink: "Nusxa olish",
+        copied: "Nusxa olindi!",
+        linkLabel: "O'rnatish havolasi",
+        qrCodeLabel: "QR kod",
+        close: "Yopish",
+        newOrder: "Yangi buyurtma",
+        manualNote: "Linklar nusxalash uchun tayyor"
+      },
+      loading: "Yuklanmoqda...",
+      processing: "Buyurtma qayta ishlanmoqda...",
+      error: {
+        title: "Xatolik yuz berdi",
+        retry: "Qayta urinish",
+        insufficientBalance: "Hisobda mablag' yetarli emas",
+        invalidPhone: "Telefon raqam noto'g'ri"
+      },
       labels: {
         fullName: "Ism Familiya",
         phone: "+998",
@@ -271,7 +300,38 @@ const uz = {
       traffic: "Trafik",
       copy: "Nusxalash",
       close: "Yopish",
-      qrAlt: "eSIM QR kodi"
+      qrAlt: "eSIM QR kodi",
+      packageName: "Paket",
+      destination: "Davlat",
+      validity: "Muddat",
+      expiryDate: "Tugash sanasi",
+      purchaseDate: "Sotib olingan",
+      shortUrl: "O'rnatish havolasi",
+      deliveryStatus: "Yetkazish holati",
+      deliveryMethod: "Yetkazish usuli",
+      customerPhone: "Telefon raqam",
+      priceInfo: "Narx ma'lumotlari",
+      retailPrice: "B2C narxi",
+      partnerPrice: "Siz to'ladingiz",
+      discount: "Tejov",
+      refreshUsage: "Yangilash",
+      refreshing: "Yangilanmoqda...",
+      resendSms: "SMS qayta yuborish",
+      resending: "Yuborilmoqda...",
+      smdpStatus: "SMDP holati",
+      copied: "Nusxalandi!",
+      noUsageData: "Trafik ma'lumotlari hali mavjud emas",
+      actions: "Amallar",
+      deliveryMethods: {
+        sms: "SMS",
+        manual: "Qo'lda"
+      },
+      deliveryStatuses: {
+        pending: "Kutilmoqda",
+        sent: "Yuborildi",
+        delivered: "Yetkazildi",
+        failed: "Xatolik"
+      }
     },
     modalGroup: {
       orderId: "Buyurtma ID",
@@ -353,7 +413,9 @@ const uz = {
       create: "Yaratish",
       save: "Saqlash",
       close: "Yopish",
-      cancel: "Bekor qilish"
+      cancel: "Bekor qilish",
+      viewOrder: "Buyurtmani ko'rish",
+      viewFullOrder: "To'liq buyurtmani ko'rish"
     },
     labels: {
       departure: "Ketish",
@@ -391,6 +453,64 @@ const uz = {
       deletedTitle: "Guruh o'chirildi",
       packageAttachedTitle: "Paket biriktirildi",
       actionDescription: "Ma'lumotlar bazasiga saqlandi"
+    }
+  },
+  groupOrderDetails: {
+    back: "Buyurtmalarga qaytish",
+    printAllQr: "Barcha QR chop etish",
+    orderDate: "Buyurtma sanasi",
+    travelDates: "Sayohat",
+    totalEsims: "Jami eSIM",
+    activated: "Faollashtirilgan",
+    pending: "Kutilmoqda",
+    problems: "Muammo",
+    searchPlaceholder: "Qidirish: ism, telefon, email, ICCID",
+    customers: "mijoz",
+    customer: "Mijoz",
+    contact: "Kontakt",
+    delivery: "Yetkazish",
+    esimStatus: "eSIM holati",
+    dataUsage: "Data",
+    noResults: "Mijozlar topilmadi",
+    resend: "Qayta yuborish",
+    viewDetails: "Batafsil",
+    close: "Yopish",
+    pause: "To'xtatish",
+    topup: "Top-up",
+    installLinks: "O'rnatish linklari",
+    esimDetails: "eSIM ma'lumotlari",
+    package: "Paket",
+    transactionNo: "Tranzaksiya",
+    orderNo: "Buyurtma raqami",
+    activatedAt: "Faollashtirilgan",
+    installedAt: "O'rnatilgan",
+    expiresAt: "Tugash sanasi",
+    phone: "Telefon",
+    email: "Email",
+    deliveryMethod: "Yetkazish usuli",
+    deliveryStatuses: {
+      pending: "Kutilmoqda",
+      sent: "Yuborilgan",
+      delivered: "Yetkazilgan",
+      failed: "Xatolik",
+      bounced: "Qaytarilgan"
+    },
+    esimStatuses: {
+      NOT_ACTIVE: "Kutilmoqda",
+      IN_USE: "Faol",
+      EXPIRED: "Tugagan",
+      DEPLETED: "Data tugagan",
+      CANCELLED: "Bekor qilingan",
+      FAILED: "Xatolik"
+    },
+    loadError: "Buyurtma ma'lumotlarini yuklashda xatolik",
+    notFound: "Buyurtma topilmadi",
+    toast: {
+      copySuccess: "Nusxalandi",
+      copyError: "Nusxalashda xatolik",
+      resendSuccess: "Qayta yuborildi",
+      resendError: "Qayta yuborishda xatolik",
+      printStarted: "Chop etish oynasi ochildi"
     }
   },
   status: {
@@ -494,6 +614,53 @@ const uz = {
       accountEmail: "Hisob email",
     },
     logout: "Chiqish",
+  },
+  customers: {
+    title: "Mijozlar",
+    subtitle: "Barcha mijozlarni boshqarish",
+    searchPlaceholder: "Qidirish: ism, telefon, email",
+    empty: "Mijozlar topilmadi",
+    loadError: "Mijozlarni yuklashda xatolik",
+    addCustomer: "Mijoz qo'shish",
+    filters: {
+      all: "Barchasi",
+      active: "Faol",
+      inactive: "Faol emas",
+      new: "Yangi"
+    },
+    stats: {
+      total: "Jami mijozlar",
+      active: "Faol",
+      inactive: "Faol emas",
+      newCustomers: "Yangi"
+    },
+    table: {
+      customer: "Mijoz",
+      contact: "Kontakt",
+      status: "Holat",
+      orders: "Buyurtmalar",
+      spent: "Sarflangan",
+      lastOrder: "Oxirgi buyurtma",
+      groups: "Guruhlar"
+    },
+    modal: {
+      title: "Mijoz ma'lumotlari",
+      orderHistory: "Buyurtmalar tarixi",
+      groups: "Guruhlar",
+      noOrders: "Buyurtmalar topilmadi",
+      noGroups: "Guruhlarga qo'shilmagan",
+      close: "Yopish",
+      viewOrder: "Buyurtmani ko'rish"
+    },
+    statusLabels: {
+      active: "Faol",
+      inactive: "Faol emas",
+      new: "Yangi"
+    },
+    toast: {
+      copySuccess: "Nusxalandi",
+      copyError: "Nusxalashda xatolik"
+    }
   }
 };
 

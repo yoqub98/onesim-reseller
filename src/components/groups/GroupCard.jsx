@@ -1,12 +1,14 @@
 import {
   CalendarDaysIcon,
   ClockIcon,
+  EyeIcon,
   PencilSquareIcon,
   PlusIcon,
   TrashIcon,
   UserGroupIcon
 } from "@heroicons/react/24/outline";
 import { Badge, Box, HStack, Text, VStack } from "@chakra-ui/react";
+import { useNavigate } from "react-router-dom";
 import { uiColors } from "../../design-system/tokens";
 import { AppButton, AppIconButton, SurfaceCard } from "../ui";
 
@@ -30,6 +32,7 @@ function formatSchedule(value) {
 }
 
 function GroupCard({ group, t, deliveryIcon: DeliveryIcon, onEdit, onDelete, onOpenDetails, onAttachPackage }) {
+  const navigate = useNavigate();
   const membersCount = group.members?.length || 0;
   const hasPackage = Boolean(group.packageLabel);
   const isEsimOrdered = group.esimOrderStatus === "ordered";
@@ -186,9 +189,21 @@ function GroupCard({ group, t, deliveryIcon: DeliveryIcon, onEdit, onDelete, onO
               </HStack>
             </Box>
           </HStack>
-          <AppButton variant="soft" h="36px" minW="102px" onClick={() => onOpenDetails(group)}>
-            {t.actions.details}
-          </AppButton>
+          <HStack spacing={2}>
+            {isEsimOrdered && group.groupOrderId && (
+              <AppButton
+                variant="primary"
+                h="36px"
+                leftIcon={<EyeIcon width={14} />}
+                onClick={() => navigate(`/orders/group/${group.groupOrderId}`)}
+              >
+                {t.actions?.viewOrder || "Buyurtmani ko'rish"}
+              </AppButton>
+            )}
+            <AppButton variant="soft" h="36px" minW="102px" onClick={() => onOpenDetails(group)}>
+              {t.actions.details}
+            </AppButton>
+          </HStack>
         </HStack>
       </VStack>
     </SurfaceCard>

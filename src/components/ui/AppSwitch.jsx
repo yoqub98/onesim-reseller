@@ -1,20 +1,28 @@
 import { Box, HStack, Text } from "@chakra-ui/react";
-import { uiColors } from "../../design-system/tokens";
+import { uiColors, uiShadows, uiTransitions } from "../../design-system/tokens";
 
-function AppSwitch({ label, description, isChecked = false, onChange }) {
+const switchSizes = {
+  sm: { trackW: "36px", trackH: "20px", knob: "16px", offset: "2px" },
+  md: { trackW: "44px", trackH: "24px", knob: "20px", offset: "2px" }
+};
+
+function AppSwitch({ label, description, isChecked = false, isDisabled = false, size = "sm", onChange }) {
+  const dim = switchSizes[size] || switchSizes.sm;
+  const knobTravel = `calc(${dim.trackW} - ${dim.knob} - ${dim.offset} * 2)`;
+
   const toggle = () => {
-    if (!onChange) return;
+    if (!onChange || isDisabled) return;
     onChange({ target: { checked: !isChecked } });
   };
 
   return (
-    <HStack justify="space-between" align="start" spacing={4} w="full">
+    <HStack justify="space-between" align="start" spacing={3} w="full">
       <Box flex="1">
-        <Text fontSize="sm" fontWeight="600" color={uiColors.textPrimary}>
+        <Text fontSize="14px" fontWeight="600" color={isDisabled ? uiColors.textMuted : uiColors.textPrimary}>
           {label}
         </Text>
         {description ? (
-          <Text mt={1} fontSize="xs" color={uiColors.textSecondary}>
+          <Text mt={0.5} fontSize="12px" color={uiColors.textSecondary}>
             {description}
           </Text>
         ) : null}
@@ -24,24 +32,36 @@ function AppSwitch({ label, description, isChecked = false, onChange }) {
         type="button"
         role="switch"
         aria-checked={isChecked}
+        aria-label={label}
+        disabled={isDisabled}
         onClick={toggle}
-        w="44px"
-        h="24px"
+        w={dim.trackW}
+        h={dim.trackH}
+        minW={dim.trackW}
         borderRadius="999px"
-        bg={isChecked ? uiColors.accent : "#cbd5e1"}
+        bg={isChecked ? uiColors.accent : "#d1d5db"}
         position="relative"
-        transition="all 0.2s ease"
+        transition={uiTransitions.standard}
+        cursor={isDisabled ? "not-allowed" : "pointer"}
+        opacity={isDisabled ? 0.5 : 1}
+        flexShrink={0}
+        _hover={!isDisabled ? { bg: isChecked ? uiColors.accentHover : "#b8bdc5" } : {}}
+        _focusVisible={{
+          outline: "none",
+          boxShadow: uiShadows.focus
+        }}
       >
         <Box
           position="absolute"
-          top="2px"
-          left={isChecked ? "22px" : "2px"}
-          w="20px"
-          h="20px"
-          borderRadius="999px"
+          top={dim.offset}
+          left={dim.offset}
+          transform={isChecked ? `translateX(${knobTravel})` : "translateX(0)"}
+          w={dim.knob}
+          h={dim.knob}
+          borderRadius="50%"
           bg="white"
-          boxShadow="0 1px 2px rgba(0,0,0,0.2)"
-          transition="left 0.2s ease"
+          boxShadow="0 1px 3px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.1)"
+          transition={uiTransitions.standard}
         />
       </Box>
     </HStack>

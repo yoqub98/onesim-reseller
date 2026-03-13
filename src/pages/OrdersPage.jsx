@@ -80,7 +80,10 @@ function OrdersPage() {
     }
 
     if (activeTab === "group") {
-      groupModal.open(row);
+      // Navigate to dedicated Group Order Details page
+      // TODO: Backend - row.groupOrderId should come from group_orders table
+      const groupOrderId = row.groupOrderId || row.id;
+      navigate(`/orders/group/${groupOrderId}`);
       return;
     }
 

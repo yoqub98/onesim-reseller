@@ -1,8 +1,26 @@
 import { Box } from "@chakra-ui/react";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
-import { uiColors, uiRadii } from "../../design-system/tokens";
+import { uiColors, uiControlSizes, uiRadii, uiShadows } from "../../design-system/tokens";
 
-function AppSelect({ children, leftIcon, ...props }) {
+const statusStyles = {
+  default: {
+    borderColor: uiColors.borderStrong,
+    hoverBorderColor: uiColors.borderStrong,
+    focusBorderColor: uiColors.accent,
+    focusShadow: uiShadows.focus
+  },
+  error: {
+    borderColor: "#fca5a5",
+    hoverBorderColor: uiColors.error,
+    focusBorderColor: uiColors.error,
+    focusShadow: "0 0 0 3px rgba(220, 38, 38, 0.22)"
+  }
+};
+
+function AppSelect({ children, leftIcon, size = "md", status = "default", ...props }) {
+  const controlSize = uiControlSizes[size] || uiControlSizes.md;
+  const activeStatus = statusStyles[status] || statusStyles.default;
+
   return (
     <Box position="relative">
       {leftIcon ? (
@@ -22,16 +40,21 @@ function AppSelect({ children, leftIcon, ...props }) {
         as="select"
         appearance="none"
         w="100%"
-        h="40px"
+        h={controlSize.h}
         pl={leftIcon ? 9 : 3}
         pe={9}
         borderWidth="1px"
-        borderColor={uiColors.borderStrong}
-        borderRadius={uiRadii.sm}
+        borderColor={activeStatus.borderColor}
+        borderRadius={uiRadii.md}
         bg="white"
         color={uiColors.textPrimary}
-        fontSize="sm"
-        _focusVisible={{ outline: "none", borderColor: uiColors.accent }}
+        fontSize={controlSize.fontSize}
+        _hover={{ borderColor: activeStatus.hoverBorderColor }}
+        _focusVisible={{
+          outline: "none",
+          borderColor: activeStatus.focusBorderColor,
+          boxShadow: activeStatus.focusShadow
+        }}
         {...props}
       >
         {children}
