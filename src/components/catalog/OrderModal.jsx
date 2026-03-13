@@ -349,36 +349,38 @@ function OrderModal({
           </Box>
         </Box>
 
-        <Box borderTopWidth="1px" borderColor={uiColors.border} bg="white" px={5} py={5}>
-          <VStack align="stretch" spacing={2} mb={3}>
-            <HStack justify="space-between">
-              <Text fontSize="sm" color="#45556c">{t.modal.summary.packagePrice} ({customerCount} ta)</Text>
-              <Text fontSize="sm" color="#45556c">{formatMoneyFromUzs(packageTotal, currency)}</Text>
-            </HStack>
-            <HStack justify="space-between">
-              <Text fontSize="sm" color="#00a63e" fontWeight="600">{t.modal.summary.partnerDiscount}</Text>
-              <Text fontSize="sm" color="#00a63e">- {formatMoneyFromUzs(partnerDiscount, currency)}</Text>
-            </HStack>
-            <HStack justify="space-between" pt={2} borderTopWidth="1px" borderColor="#f1f5f9">
-              <Text fontSize="sm" color="#45556c">{t.modal.summary.partnerProfit}</Text>
-              <Box bg="#dcfce7" borderRadius="4px" px={2} py={0.5}>
-                <Text fontSize="sm" color="#008236" fontWeight="700">{formatMoneyFromUzs(partnerProfit, currency)}</Text>
-              </Box>
-            </HStack>
-          </VStack>
+        {activeOrderTab !== "self" && (
+          <Box borderTopWidth="1px" borderColor={uiColors.border} bg="white" px={5} py={5}>
+            <VStack align="stretch" spacing={2} mb={3}>
+              <HStack justify="space-between">
+                <Text fontSize="sm" color="#45556c">{t.modal.summary.packagePrice} ({customerCount} ta)</Text>
+                <Text fontSize="sm" color="#45556c">{formatMoneyFromUzs(packageTotal, currency)}</Text>
+              </HStack>
+              <HStack justify="space-between">
+                <Text fontSize="sm" color="#00a63e" fontWeight="600">{t.modal.summary.partnerDiscount}</Text>
+                <Text fontSize="sm" color="#00a63e">- {formatMoneyFromUzs(partnerDiscount, currency)}</Text>
+              </HStack>
+              <HStack justify="space-between" pt={2} borderTopWidth="1px" borderColor="#f1f5f9">
+                <Text fontSize="sm" color="#45556c">{t.modal.summary.partnerProfit}</Text>
+                <Box bg="#dcfce7" borderRadius="4px" px={2} py={0.5}>
+                  <Text fontSize="sm" color="#008236" fontWeight="700">{formatMoneyFromUzs(partnerProfit, currency)}</Text>
+                </Box>
+              </HStack>
+            </VStack>
 
-          <HStack justify="space-between" mb={3}>
-            <Text fontSize="lg" fontWeight="700" color={uiColors.textPrimary}>{t.modal.summary.total}</Text>
-            <Text fontSize={{ base: "24px", md: "26px" }} fontWeight="800" lineHeight="1" color="#171717">
-              {totalPaymentParts.prefix}{totalPaymentParts.amount} <Text as="span" color="#b4b4b4" fontSize={{ base: "24px", md: "26px" }} fontWeight="600">{totalPaymentParts.code}</Text>
-            </Text>
-          </HStack>
+            <HStack justify="space-between" mb={3}>
+              <Text fontSize="lg" fontWeight="700" color={uiColors.textPrimary}>{t.modal.summary.total}</Text>
+              <Text fontSize={{ base: "24px", md: "26px" }} fontWeight="800" lineHeight="1" color="#171717">
+                {totalPaymentParts.prefix}{totalPaymentParts.amount} <Text as="span" color="#b4b4b4" fontSize={{ base: "24px", md: "26px" }} fontWeight="600">{totalPaymentParts.code}</Text>
+              </Text>
+            </HStack>
 
-          <HStack spacing={3}>
-            <AppButton variant="soft" h="51px" flex="1" onClick={onClose}>{t.modal.cancel}</AppButton>
-            <AppButton variant="primary" h="51px" flex="1" onClick={onConfirm}>{t.modal.confirm}</AppButton>
-          </HStack>
-        </Box>
+            <HStack spacing={3}>
+              <AppButton variant="soft" h="51px" flex="1" onClick={onClose}>{t.modal.cancel}</AppButton>
+              <AppButton variant="primary" h="51px" flex="1" onClick={onConfirm}>{t.modal.confirm}</AppButton>
+            </HStack>
+          </Box>
+        )}
       </SurfaceCard>
     </Box>
   );

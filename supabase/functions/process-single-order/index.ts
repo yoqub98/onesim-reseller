@@ -172,6 +172,7 @@ serve(async (req) => {
           short_url: shortUrl,
           esim_tran_no: esim.esimTranNo,
           order_no: orderNo,
+          transaction_id: transactionId,
           order_status: 'ALLOCATED',
           source_type: 'b2b_partner',
           delivery_method,
