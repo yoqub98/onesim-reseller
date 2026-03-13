@@ -10,6 +10,7 @@ import EarningsPage from "./pages/EarningsPage";
 import GroupsPage from "./pages/GroupsPage";
 import GroupOrderDetailsPage from "./pages/GroupOrderDetailsPage";
 import LoginPage from "./pages/LoginPage";
+import SharedEsimPage from "./pages/SharedEsimPage";
 import NewOrderPage from "./pages/NewOrderPage";
 import OrderDetailsPage from "./pages/OrderDetailsPage";
 import OrdersPage from "./pages/OrdersPage";
@@ -250,6 +251,9 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+
+      {/* Public shared eSIM page - no auth required */}
+      <Route path="/e/:token" element={<SharedEsimPage />} />
 
       {/* Catch-all redirect */}
       <Route path="*" element={<FallbackRoute />} />
