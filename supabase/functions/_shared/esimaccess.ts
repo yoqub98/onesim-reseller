@@ -150,11 +150,12 @@ export class EsimAccessClient {
 
   /**
    * Query order status and get eSIM details
+   * Returns { esims, isStillProcessing } to handle the "getting resource" state
    * @param orderNo - Order number from orderEsim response
    * @param pageNum - Page number (default: 1)
    * @param pageSize - Items per page (default: 50)
    */
-  async queryOrder(orderNo: string, pageNum = 1, pageSize = 50): Promise<EsimProfile[]> {
+  async queryOrder(orderNo: string, pageNum = 1, pageSize = 50): Promise<{ esims: EsimProfile[], isStillProcessing: boolean }> {
     const response = await this.request<QueryResponse>(
       '/api/v1/open/esim/query',
       'POST',
@@ -169,12 +170,22 @@ export class EsimAccessClient {
 
     console.log('[eSIMAccess] Query response:', JSON.stringify(response));
 
-    // Success when success=true and errorCode is null or '0'
+    // Check if still processing (not a real error)
+    // API returns success=false with message like "the batchOrder has been getting resource"
+    const errorMsg = response.errorMsg || '';
+    const isStillProcessing = !response.success && errorMsg.includes('getting resource');
+
+    if (isStillProcessing) {
+      console.log('[eSIMAccess] Order still processing, will retry...');
+      return { esims: [], isStillProcessing: true };
+    }
+
+    // Real error - not a processing state
     if (!response.success || (response.errorCode && response.errorCode !== '0')) {
       throw new Error(`Order query failed: ${response.errorMsg || response.errorCode || 'Unknown error'}`);
     }
 
-    return response.obj?.esimList ?? [];
+    return { esims: response.obj?.esimList ?? [], isStillProcessing: false };
   }
 
   /**
@@ -189,25 +200,38 @@ export class EsimAccessClient {
     intervalMs = 3000
   ): Promise<EsimProfile[]> {
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      const esims = await this.queryOrder(orderNo);
+      console.log(`[eSIMAccess] Poll attempt ${attempt}/${maxAttempts} for order ${orderNo}`);
+
+      const { esims, isStillProcessing } = await this.queryOrder(orderNo);
+
+      // If still processing or not all allocated, wait and retry
+      if (isStillProcessing) {
+        if (attempt < maxAttempts) {
+          await new Promise((resolve) => setTimeout(resolve, intervalMs));
+        }
+        continue;
+      }
 
       // Check if all eSIMs are allocated
-      const allAllocated = esims.every(
+      const allAllocated = esims.length > 0 && esims.every(
         (esim) => esim.esimStatus === 'GOT_RESOURCE'
       );
 
       if (allAllocated) {
+        console.log(`[eSIMAccess] All ${esims.length} eSIMs allocated successfully`);
         return esims;
       }
 
-      // Wait before next poll
+      // Got partial results, wait before next poll
       if (attempt < maxAttempts) {
         await new Promise((resolve) => setTimeout(resolve, intervalMs));
       }
     }
 
-    // Return partial result after max attempts
-    return await this.queryOrder(orderNo);
+    // Final attempt - return whatever we have
+    console.log(`[eSIMAccess] Max attempts reached, fetching final state...`);
+    const { esims } = await this.queryOrder(orderNo);
+    return esims;
   }
 }
 
