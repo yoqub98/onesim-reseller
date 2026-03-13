@@ -151,20 +151,30 @@ export class EsimAccessClient {
   /**
    * Query order status and get eSIM details
    * @param orderNo - Order number from orderEsim response
+   * @param pageNum - Page number (default: 1)
+   * @param pageSize - Items per page (default: 50)
    */
-  async queryOrder(orderNo: string): Promise<EsimProfile[]> {
+  async queryOrder(orderNo: string, pageNum = 1, pageSize = 50): Promise<EsimProfile[]> {
     const response = await this.request<QueryResponse>(
       '/api/v1/open/esim/query',
       'POST',
-      { orderNo }
+      {
+        orderNo,
+        pager: {
+          pageNum,
+          pageSize
+        }
+      }
     );
+
+    console.log('[eSIMAccess] Query response:', JSON.stringify(response));
 
     // Success when success=true and errorCode is null or '0'
     if (!response.success || (response.errorCode && response.errorCode !== '0')) {
       throw new Error(`Order query failed: ${response.errorMsg || response.errorCode || 'Unknown error'}`);
     }
 
-    return response.obj.esimList;
+    return response.obj?.esimList ?? [];
   }
 
   /**
