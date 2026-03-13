@@ -98,7 +98,8 @@ export class EsimAccessClient {
 
     console.log('[eSIMAccess] Balance response:', JSON.stringify(response));
 
-    if (!response.success || response.errorCode !== '0') {
+    // Success when success=true and errorCode is null or '0'
+    if (!response.success || (response.errorCode && response.errorCode !== '0')) {
       throw new Error(`Balance query failed: ${response.errorMsg || response.errorCode || 'Unknown error'}`);
     }
 
@@ -129,14 +130,19 @@ export class EsimAccessClient {
       ],
     };
 
+    console.log('[eSIMAccess] Order payload:', JSON.stringify(payload));
+
     const response = await this.request<OrderResponse>(
       '/api/v1/open/esim/order',
       'POST',
       payload
     );
 
-    if (!response.success || response.errorCode !== '0') {
-      throw new Error(`eSIM order failed: ${response.errorMsg || response.errorCode}`);
+    console.log('[eSIMAccess] Order response:', JSON.stringify(response));
+
+    // Success when success=true and errorCode is null or '0'
+    if (!response.success || (response.errorCode && response.errorCode !== '0')) {
+      throw new Error(`eSIM order failed: ${response.errorMsg || response.errorCode || 'Unknown error'}`);
     }
 
     return response.obj.orderNo;
@@ -153,8 +159,9 @@ export class EsimAccessClient {
       { orderNo }
     );
 
-    if (!response.success || response.errorCode !== '0') {
-      throw new Error(`Order query failed: ${response.errorMsg || response.errorCode}`);
+    // Success when success=true and errorCode is null or '0'
+    if (!response.success || (response.errorCode && response.errorCode !== '0')) {
+      throw new Error(`Order query failed: ${response.errorMsg || response.errorCode || 'Unknown error'}`);
     }
 
     return response.obj.esimList;

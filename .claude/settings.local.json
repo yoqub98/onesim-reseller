@@ -19,7 +19,14 @@
       "Bash(claude mcp --help:*)",
       "Bash(claude mcp list:*)",
       "Bash(claude mcp get:*)",
-      "Bash(claude mcp remove:*)"
+      "Bash(claude mcp remove:*)",
+      "Bash(npm install:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(npx vercel --prod)",
+      "Bash(npx vercel:*)",
+      "Bash(supabase functions deploy:*)"
     ]
   },
   "enabledMcpjsonServers": [

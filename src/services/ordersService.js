@@ -156,11 +156,17 @@ export const ordersService = {
    * @param {{ tab?: 'client'|'group'|'self', query?: string }} [params]
    * @returns {Promise<import('./types').PortalOrder[]>}
    * @endpoint GET /api/v1/portal/orders?tab={tab}&query={query}
-   * @todo Replace withDelay mock with HTTP client call
    */
-  listPortalOrders(params = {}) {
+  async listPortalOrders(params = {}) {
     const tab = params.tab || "client";
     const query = normalize(params.query);
+
+    // For "self" tab, fetch real orders from Supabase
+    if (tab === "self") {
+      return this.listSelfOrders({ query: params.query });
+    }
+
+    // For other tabs, use mock data (until implemented)
     const expectedType = portalTypeByTab[tab] || "client";
     const statusFilter = params.status || null;
     const dateFrom = params.dateFrom ? new Date(params.dateFrom) : null;
@@ -527,5 +533,174 @@ export const ordersService = {
   isValidUzPhone(phone) {
     const formatted = this.formatPhoneNumber(phone);
     return /^998\d{9}$/.test(formatted);
+  },
+
+  // ============================================================
+  // REAL DATA METHODS - SUPABASE
+  // ============================================================
+
+  /**
+   * Lists self orders (Mode 1: Tur agent nomiga) from Supabase.
+   * @param {{ query?: string }} [params]
+   * @returns {Promise<Array>}
+   */
+  async listSelfOrders(params = {}) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      return [];
+    }
+
+    // Get partner ID
+    const { data: partner } = await supabase
+      .from("partners")
+      .select("id")
+      .eq("user_id", session.user.id)
+      .single();
+
+    if (!partner) {
+      return [];
+    }
+
+    // Fetch orders with package info
+    let query = supabase
+      .from("orders")
+      .select(`
+        id,
+        package_code,
+        iccid,
+        order_status,
+        delivery_method,
+        delivery_status,
+        customer_phone,
+        short_url,
+        qr_code_data,
+        activation_code,
+        retail_price_usd,
+        partner_paid_usd,
+        discount_rate,
+        discount_amount_usd,
+        created_at,
+        expiry_date,
+        smdp_status,
+        esim_packages:package_code (
+          name,
+          location_name,
+          location_code,
+          data,
+          duration,
+          retail_price_usd
+        )
+      `)
+      .eq("partner_id", partner.id)
+      .eq("source_type", "b2b_partner")
+      .order("created_at", { ascending: false });
+
+    // Apply search filter
+    if (params.query) {
+      const searchQuery = `%${params.query}%`;
+      query = query.or(`iccid.ilike.${searchQuery},package_code.ilike.${searchQuery}`);
+    }
+
+    const { data: orders, error } = await query;
+
+    if (error) {
+      console.error("Error fetching self orders:", error);
+      return [];
+    }
+
+    // Map to portal format
+    return (orders || []).map(order => ({
+      id: order.id,
+      orderType: "self",
+      packageId: order.package_code,
+      iccid: order.iccid,
+      status: this._mapOrderStatus(order.order_status),
+      deliveryMethod: order.delivery_method,
+      deliveryStatus: order.delivery_status,
+      customerPhone: order.customer_phone,
+      shortUrl: order.short_url,
+      qrCodeData: order.qr_code_data,
+      activationCode: order.activation_code,
+      retailPriceUsd: order.retail_price_usd,
+      partnerPaidUsd: order.partner_paid_usd,
+      discountRate: order.discount_rate,
+      discountAmountUsd: order.discount_amount_usd,
+      purchasedAt: order.created_at,
+      expiryDate: order.expiry_date,
+      smdpStatus: order.smdp_status,
+      package: order.esim_packages ? {
+        id: order.package_code,
+        name: order.esim_packages.name,
+        destination: order.esim_packages.location_name || order.esim_packages.location_code,
+        dataGb: order.esim_packages.data ? order.esim_packages.data / 1024 : 0,
+        durationDays: order.esim_packages.duration || 0,
+        priceUsd: order.esim_packages.retail_price_usd
+      } : null,
+      // Usage data - placeholder until we implement real usage API
+      dataUsageGb: 0,
+      totalDataGb: order.esim_packages?.data ? order.esim_packages.data / 1024 : 0
+    }));
+  },
+
+  /**
+   * Maps order_status to display status
+   * @param {string} orderStatus
+   * @returns {string}
+   */
+  _mapOrderStatus(orderStatus) {
+    const statusMap = {
+      "ALLOCATED": ORDER_STATUS_ACTIVE,
+      "GOT_RESOURCE": ORDER_STATUS_ACTIVE,
+      "GETTING_RESOURCE": ORDER_STATUS_PENDING,
+      "INSTALLED": ORDER_STATUS_ACTIVE,
+      "IN_USE": ORDER_STATUS_ACTIVE,
+      "USED": ORDER_STATUS_ACTIVE,
+      "EXPIRED": ORDER_STATUS_FAILED,
+      "CANCELLED": ORDER_STATUS_FAILED,
+      "FAILED": ORDER_STATUS_FAILED
+    };
+    return statusMap[orderStatus] || ORDER_STATUS_PENDING;
+  },
+
+  /**
+   * Gets a single self order details from Supabase.
+   * @param {string} orderId
+   * @returns {Promise<Object|null>}
+   */
+  async getSelfOrderDetails(orderId) {
+    const { data: order, error } = await supabase
+      .from("orders")
+      .select(`
+        *,
+        esim_packages:package_code (
+          name,
+          location_name,
+          location_code,
+          data,
+          duration,
+          retail_price_usd,
+          description
+        )
+      `)
+      .eq("id", orderId)
+      .single();
+
+    if (error || !order) {
+      console.error("Error fetching order details:", error);
+      return null;
+    }
+
+    // Also fetch delivery logs
+    const { data: deliveryLogs } = await supabase
+      .from("esim_delivery_logs")
+      .select("*")
+      .eq("order_id", orderId)
+      .order("sent_at", { ascending: false });
+
+    return {
+      ...order,
+      package: order.esim_packages,
+      deliveryLogs: deliveryLogs || []
+    };
   }
 };

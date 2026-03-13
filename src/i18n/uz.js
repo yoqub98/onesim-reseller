@@ -300,7 +300,38 @@ const uz = {
       traffic: "Trafik",
       copy: "Nusxalash",
       close: "Yopish",
-      qrAlt: "eSIM QR kodi"
+      qrAlt: "eSIM QR kodi",
+      packageName: "Paket",
+      destination: "Davlat",
+      validity: "Muddat",
+      expiryDate: "Tugash sanasi",
+      purchaseDate: "Sotib olingan",
+      shortUrl: "O'rnatish havolasi",
+      deliveryStatus: "Yetkazish holati",
+      deliveryMethod: "Yetkazish usuli",
+      customerPhone: "Telefon raqam",
+      priceInfo: "Narx ma'lumotlari",
+      retailPrice: "B2C narxi",
+      partnerPrice: "Siz to'ladingiz",
+      discount: "Tejov",
+      refreshUsage: "Yangilash",
+      refreshing: "Yangilanmoqda...",
+      resendSms: "SMS qayta yuborish",
+      resending: "Yuborilmoqda...",
+      smdpStatus: "SMDP holati",
+      copied: "Nusxalandi!",
+      noUsageData: "Trafik ma'lumotlari hali mavjud emas",
+      actions: "Amallar",
+      deliveryMethods: {
+        sms: "SMS",
+        manual: "Qo'lda"
+      },
+      deliveryStatuses: {
+        pending: "Kutilmoqda",
+        sent: "Yuborildi",
+        delivered: "Yetkazildi",
+        failed: "Xatolik"
+      }
     },
     modalGroup: {
       orderId: "Buyurtma ID",
