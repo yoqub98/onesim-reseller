@@ -541,6 +541,7 @@ export const ordersService = {
 
   /**
    * Lists self orders (Mode 1: Tur agent nomiga) from Supabase.
+   * Uses separate queries since orders.package_code has no FK to esim_packages.
    * @param {{ query?: string }} [params]
    * @returns {Promise<Array>}
    */
@@ -561,12 +562,16 @@ export const ordersService = {
       return [];
     }
 
-    // Fetch orders with package info
+    // Step 1: Fetch orders (no FK join - use denormalized fields from orders table)
     let query = supabase
       .from("orders")
       .select(`
         id,
         package_code,
+        package_name,
+        country_code,
+        data_amount,
+        validity_days,
         iccid,
         order_status,
         delivery_method,
@@ -575,21 +580,13 @@ export const ordersService = {
         short_url,
         qr_code_data,
         activation_code,
-        retail_price_usd,
+        price_usd,
         partner_paid_usd,
         discount_rate,
         discount_amount_usd,
         created_at,
         expiry_date,
-        smdp_status,
-        esim_packages:package_code (
-          name,
-          location_name,
-          location_code,
-          data,
-          duration,
-          retail_price_usd
-        )
+        smdp_status
       `)
       .eq("partner_id", partner.id)
       .eq("source_type", "b2b_partner")
@@ -608,38 +605,59 @@ export const ordersService = {
       return [];
     }
 
-    // Map to portal format
-    return (orders || []).map(order => ({
-      id: order.id,
-      orderType: "self",
-      packageId: order.package_code,
-      iccid: order.iccid,
-      status: ordersService._mapOrderStatus(order.order_status),
-      deliveryMethod: order.delivery_method,
-      deliveryStatus: order.delivery_status,
-      customerPhone: order.customer_phone,
-      shortUrl: order.short_url,
-      qrCodeData: order.qr_code_data,
-      activationCode: order.activation_code,
-      retailPriceUsd: order.retail_price_usd,
-      partnerPaidUsd: order.partner_paid_usd,
-      discountRate: order.discount_rate,
-      discountAmountUsd: order.discount_amount_usd,
-      purchasedAt: order.created_at,
-      expiryDate: order.expiry_date,
-      smdpStatus: order.smdp_status,
-      package: order.esim_packages ? {
-        id: order.package_code,
-        name: order.esim_packages.name,
-        destination: order.esim_packages.location_name || order.esim_packages.location_code,
-        dataGb: order.esim_packages.data ? order.esim_packages.data / 1024 : 0,
-        durationDays: order.esim_packages.duration || 0,
-        priceUsd: order.esim_packages.retail_price_usd
-      } : null,
-      // Usage data - placeholder until we implement real usage API
-      dataUsageGb: 0,
-      totalDataGb: order.esim_packages?.data ? order.esim_packages.data / 1024 : 0
-    }));
+    // Step 2: Fetch package info for the unique package codes
+    const packageCodes = [...new Set((orders || []).map(o => o.package_code).filter(Boolean))];
+    let packagesMap = {};
+
+    if (packageCodes.length > 0) {
+      const { data: packages } = await supabase
+        .from("esim_packages")
+        .select("package_code, name, location_code, location_type, data_volume, data_gb, duration, final_price_usd")
+        .in("package_code", packageCodes);
+
+      packagesMap = Object.fromEntries(
+        (packages || []).map(p => [p.package_code, p])
+      );
+    }
+
+    // Step 3: Map to portal format, merging package info
+    return (orders || []).map(order => {
+      const pkg = packagesMap[order.package_code];
+      // Calculate dataGb: prefer package data_gb, else data_volume (bytes) / 1GB, else denormalized data_amount
+      const dataGb = pkg?.data_gb ?? (pkg?.data_volume ? pkg.data_volume / 1073741824 : null) ?? (order.data_amount ? parseFloat(order.data_amount) : 0);
+
+      return {
+        id: order.id,
+        orderType: "self",
+        packageId: order.package_code,
+        iccid: order.iccid,
+        status: ordersService._mapOrderStatus(order.order_status),
+        deliveryMethod: order.delivery_method,
+        deliveryStatus: order.delivery_status,
+        customerPhone: order.customer_phone,
+        shortUrl: order.short_url,
+        qrCodeData: order.qr_code_data,
+        activationCode: order.activation_code,
+        retailPriceUsd: order.price_usd,
+        partnerPaidUsd: order.partner_paid_usd,
+        discountRate: order.discount_rate,
+        discountAmountUsd: order.discount_amount_usd,
+        purchasedAt: order.created_at,
+        expiryDate: order.expiry_date,
+        smdpStatus: order.smdp_status,
+        package: {
+          id: order.package_code,
+          name: pkg?.name || order.package_name || order.package_code,
+          destination: pkg?.location_code || order.country_code,
+          dataGb: dataGb,
+          durationDays: pkg?.duration || order.validity_days || 0,
+          priceUsd: pkg?.final_price_usd || order.price_usd
+        },
+        // Usage data - placeholder until we implement real usage API
+        dataUsageGb: 0,
+        totalDataGb: dataGb
+      };
+    });
   },
 
   /**
@@ -664,24 +682,15 @@ export const ordersService = {
 
   /**
    * Gets a single self order details from Supabase.
+   * Uses separate query for package since orders.package_code has no FK.
    * @param {string} orderId
    * @returns {Promise<Object|null>}
    */
   async getSelfOrderDetails(orderId) {
+    // Step 1: Fetch order (no FK join)
     const { data: order, error } = await supabase
       .from("orders")
-      .select(`
-        *,
-        esim_packages:package_code (
-          name,
-          location_name,
-          location_code,
-          data,
-          duration,
-          retail_price_usd,
-          description
-        )
-      `)
+      .select("*")
       .eq("id", orderId)
       .single();
 
@@ -690,7 +699,41 @@ export const ordersService = {
       return null;
     }
 
-    // Also fetch delivery logs
+    // Step 2: Fetch package info separately if package_code exists
+    let packageInfo = null;
+    if (order.package_code) {
+      const { data: pkg } = await supabase
+        .from("esim_packages")
+        .select("name, location_code, location_type, data_volume, data_gb, duration, final_price_usd, description")
+        .eq("package_code", order.package_code)
+        .single();
+
+      if (pkg) {
+        packageInfo = {
+          name: pkg.name,
+          location_code: pkg.location_code,
+          location_type: pkg.location_type,
+          data_volume: pkg.data_volume,
+          data_gb: pkg.data_gb,
+          duration: pkg.duration,
+          final_price_usd: pkg.final_price_usd,
+          description: pkg.description
+        };
+      }
+    }
+
+    // Fallback to denormalized fields if package not found
+    if (!packageInfo) {
+      packageInfo = {
+        name: order.package_name,
+        location_code: order.country_code,
+        data_gb: order.data_amount ? parseFloat(order.data_amount) : 0,
+        duration: order.validity_days,
+        final_price_usd: order.price_usd
+      };
+    }
+
+    // Step 3: Fetch delivery logs
     const { data: deliveryLogs } = await supabase
       .from("esim_delivery_logs")
       .select("*")
@@ -699,7 +742,7 @@ export const ordersService = {
 
     return {
       ...order,
-      package: order.esim_packages,
+      package: packageInfo,
       deliveryLogs: deliveryLogs || []
     };
   }
