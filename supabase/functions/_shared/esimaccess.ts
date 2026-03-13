@@ -6,11 +6,12 @@
 const ESIMACCESS_BASE_URL = 'https://api.esimaccess.com';
 
 interface BalanceQueryResponse {
+  success: boolean;
+  errorCode: string;
+  errorMsg: string | null;
   obj: {
     balance: number; // units × 10000 (e.g., 940000 = $94.00)
   };
-  code: string;
-  msg: string;
 }
 
 interface OrderRequest {
@@ -23,11 +24,12 @@ interface OrderRequest {
 }
 
 interface OrderResponse {
+  success: boolean;
+  errorCode: string;
+  errorMsg: string | null;
   obj: {
     orderNo: string;
   };
-  code: string;
-  msg: string;
 }
 
 interface EsimProfile {
@@ -42,12 +44,13 @@ interface EsimProfile {
 }
 
 interface QueryResponse {
+  success: boolean;
+  errorCode: string;
+  errorMsg: string | null;
   obj: {
     orderNo: string;
     esimList: EsimProfile[];
   };
-  code: string;
-  msg: string;
 }
 
 export class EsimAccessClient {
@@ -95,9 +98,8 @@ export class EsimAccessClient {
 
     console.log('[eSIMAccess] Balance response:', JSON.stringify(response));
 
-    // Handle both success code formats: '0' or 'Success'
-    if (response.code !== '0' && response.code !== 'Success') {
-      throw new Error(`Balance query failed: ${response.msg || response.code || 'Unknown error'}`);
+    if (!response.success || response.errorCode !== '0') {
+      throw new Error(`Balance query failed: ${response.errorMsg || response.errorCode || 'Unknown error'}`);
     }
 
     return response.obj?.balance ?? 0;
@@ -133,8 +135,8 @@ export class EsimAccessClient {
       payload
     );
 
-    if (response.code !== '0') {
-      throw new Error(`eSIM order failed: ${response.msg}`);
+    if (!response.success || response.errorCode !== '0') {
+      throw new Error(`eSIM order failed: ${response.errorMsg || response.errorCode}`);
     }
 
     return response.obj.orderNo;
@@ -151,8 +153,8 @@ export class EsimAccessClient {
       { orderNo }
     );
 
-    if (response.code !== '0') {
-      throw new Error(`Order query failed: ${response.msg}`);
+    if (!response.success || response.errorCode !== '0') {
+      throw new Error(`Order query failed: ${response.errorMsg || response.errorCode}`);
     }
 
     return response.obj.esimList;
