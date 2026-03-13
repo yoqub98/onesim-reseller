@@ -163,7 +163,7 @@ export const ordersService = {
 
     // For "self" tab, fetch real orders from Supabase
     if (tab === "self") {
-      return this.listSelfOrders({ query: params.query });
+      return ordersService.listSelfOrders({ query: params.query });
     }
 
     // For other tabs, use mock data (until implemented)
@@ -531,7 +531,7 @@ export const ordersService = {
    * @returns {boolean}
    */
   isValidUzPhone(phone) {
-    const formatted = this.formatPhoneNumber(phone);
+    const formatted = ordersService.formatPhoneNumber(phone);
     return /^998\d{9}$/.test(formatted);
   },
 
@@ -614,7 +614,7 @@ export const ordersService = {
       orderType: "self",
       packageId: order.package_code,
       iccid: order.iccid,
-      status: this._mapOrderStatus(order.order_status),
+      status: ordersService._mapOrderStatus(order.order_status),
       deliveryMethod: order.delivery_method,
       deliveryStatus: order.delivery_status,
       customerPhone: order.customer_phone,
