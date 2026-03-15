@@ -17,11 +17,6 @@ import {
   Box,
   Flex,
   HStack,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalHeader,
-  ModalOverlay,
   Spinner,
   Text,
   VStack,
@@ -444,30 +439,53 @@ export default function GroupOrderProgressModal({
     (r) => r.orderStatus === "ALLOCATED"
   ).length;
 
+  if (!isOpen) return null;
+
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={state.phase === "complete" ? onClose : undefined}
-      closeOnOverlayClick={state.phase === "complete"}
-      closeOnEsc={state.phase === "complete"}
-      isCentered
-      size="xl"
-    >
-      <ModalOverlay bg="blackAlpha.600" />
-      <ModalContent borderRadius="16px" mx={4}>
-        <ModalHeader borderBottomWidth="1px" borderColor={uiColors.border} pb={3}>
+    <Box position="fixed" inset={0} zIndex={50} bg="rgba(15,23,43,0.5)" onClick={state.phase === "complete" ? onClose : undefined}>
+      <Box
+        position="absolute"
+        top="50%"
+        left="50%"
+        transform="translate(-50%, -50%)"
+        w={{ base: "calc(100% - 16px)", md: "560px" }}
+        maxH={{ base: "calc(100vh - 32px)", md: "calc(100vh - 64px)" }}
+        bg="white"
+        borderRadius="16px"
+        boxShadow="0px 25px 50px -12px rgba(0,0,0,0.25)"
+        display="flex"
+        flexDirection="column"
+        overflow="hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <Flex px={5} py={4} flexShrink={0} borderBottomWidth="1px" borderColor={uiColors.border} justify="space-between" align="center">
           <VStack align="start" spacing={0}>
             <Text fontSize="md" fontWeight="700" color={uiColors.textPrimary}>
               Guruh buyurtmasi
             </Text>
-            <Text fontSize="sm" color={uiColors.textSecondary} fontWeight="400">
+            <Text fontSize="sm" color={uiColors.textSecondary}>
               {groupName}
             </Text>
           </VStack>
-        </ModalHeader>
+          {state.phase === "complete" && (
+            <Box
+              as="button"
+              onClick={onClose}
+              p={1.5}
+              borderRadius="6px"
+              color={uiColors.textSecondary}
+              _hover={{ bg: "#f1f5f9" }}
+              lineHeight={0}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </Box>
+          )}
+        </Flex>
 
-        <ModalBody py={5}>
-          {/* ── Initiating ── */}
+        {/* Body */}
+        <Box px={5} py={5} flex={1} minH={0} overflowY="auto">
+          {/* Initiating */}
           {state.phase === "initiating" && (
             <VStack spacing={4} py={6}>
               <Spinner size="xl" color="#f97316" />
@@ -475,14 +493,14 @@ export default function GroupOrderProgressModal({
             </VStack>
           )}
 
-          {/* ── Error ── */}
+          {/* Error */}
           {state.error && (
             <Box p={3} bg="#fef2f2" borderRadius="8px" mb={4}>
               <Text fontSize="sm" color="#dc2626">{state.error}</Text>
             </Box>
           )}
 
-          {/* ── Complete — show summary ── */}
+          {/* Complete — summary */}
           {state.phase === "complete" && (
             <SummaryPanel
               memberRows={state.memberRows}
@@ -491,10 +509,9 @@ export default function GroupOrderProgressModal({
             />
           )}
 
-          {/* ── Provisioning / Delivery — show live member list ── */}
+          {/* Provisioning / Delivery — live member list */}
           {(state.phase === "provisioning" || state.phase === "delivery") && (
             <VStack spacing={4} align="stretch">
-              {/* Phase A: Provisioning progress */}
               {!showDelivery && (
                 <>
                   <Text fontSize="sm" fontWeight="600" color={uiColors.textPrimary}>
@@ -503,8 +520,6 @@ export default function GroupOrderProgressModal({
                   <ProgressBar done={provisionedCount} total={memberCount || memberRowsArray.length || 1} />
                 </>
               )}
-
-              {/* Phase B: Delivery progress */}
               {showDelivery && (
                 <>
                   <Text fontSize="sm" fontWeight="600" color={uiColors.textPrimary}>
@@ -513,9 +528,7 @@ export default function GroupOrderProgressModal({
                   <ProgressBar done={deliveredCount} total={allocatedForDelivery || 1} />
                 </>
               )}
-
-              {/* Member rows list */}
-              <VStack align="stretch" spacing={2} maxH="340px" overflowY="auto">
+              <VStack align="stretch" spacing={2}>
                 {memberRowsArray.length === 0 && (
                   <Flex justify="center" py={4}>
                     <Spinner size="sm" color="#f97316" />
@@ -531,8 +544,8 @@ export default function GroupOrderProgressModal({
               </VStack>
             </VStack>
           )}
-        </ModalBody>
-      </ModalContent>
-    </Modal>
+        </Box>
+      </Box>
+    </Box>
   );
 }
