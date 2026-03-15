@@ -2,6 +2,7 @@ import { VStack } from "@chakra-ui/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CatalogFilters, OrderModal, PackageDetailsModal, PlanCardGrid } from "../components/catalog";
+import GroupOrderProgressModal from "../components/catalog/GroupOrderProgressModal";
 import PageHeader from "../components/layout/PageHeader";
 import { useAuth } from "../context/AuthContext";
 import { useCurrency } from "../context/CurrencyContext";
@@ -13,6 +14,7 @@ import { useFormFields } from "../hooks/useFormFields";
 import { useModal } from "../hooks/useModal";
 import { catalogService } from "../services/catalogService";
 import { groupsService } from "../services/groupsService";
+import { ordersService } from "../services/ordersService";
 import { formatMoneyFromUsd } from "../utils/currency";
 
 const EMPTY_LIST = [];
@@ -46,6 +48,7 @@ function CatalogPage() {
   const buyModal = useModal();
   const [currentPage, setCurrentPage] = useState(1);
   const [activeOrderTab, setActiveOrderTab] = useState("customer");
+  const [groupProgressModal, setGroupProgressModal] = useState(null); // { groupId, groupName, memberCount } | null
   const [customers, setCustomers] = useState([createCustomer()]);
   const [selectedGroups, setSelectedGroups] = useState([]);
   const [isGroupPickerOpen, setIsGroupPickerOpen] = useState(false);
@@ -239,19 +242,48 @@ function CatalogPage() {
       return;
     }
 
+    // Group tab: trigger real bulk order pipeline
+    if (activeOrderTab === "group") {
+      const group = selectedGroups[0];
+      if (!group) return;
+
+      const packageCode = buyModal.data.packageCode || buyModal.data.package_code;
+      const deliveryMethod = group.deliveryMethod || DELIVERY_SMS;
+
+      // Open progress modal immediately (subscribes to Realtime to discover group_order_id)
+      setGroupProgressModal({
+        groupId: group.id,
+        groupName: group.name,
+        memberCount: group.members?.length || 0,
+      });
+
+      closeBuyModal();
+
+      // Fire the order — modal tracks progress via Realtime
+      ordersService.createGroupOrder({
+        group_id: group.id,
+        package_code: packageCode,
+        delivery_method: deliveryMethod,
+      }).catch((err) => {
+        console.error("Group order failed:", err);
+      });
+
+      return;
+    }
+
     navigate("/new-order", {
       state: {
         preselectedPlanId: buyModal.data.id,
-        orderMode: activeOrderTab === "group" ? "group" : activeOrderTab === "self" ? "self" : "customer",
+        orderMode: activeOrderTab === "self" ? "self" : "customer",
         customers,
-        selectedGroups,
-        deliveryMethod: activeOrderTab === "group" ? (selectedGroups[0]?.deliveryMethod || DELIVERY_SMS) : undefined,
-        deliveryTime: activeOrderTab === "group" ? (selectedGroups[0]?.deliveryTime || "now") : undefined
+        deliveryMethod: undefined,
+        deliveryTime: undefined
       }
     });
   }, [
     activeOrderTab,
     buyModal.data,
+    closeBuyModal,
     customers,
     navigate,
     selectedGroups,
@@ -357,10 +389,24 @@ function CatalogPage() {
         onConfirm={onConfirmBuy}
         partner={partner}
         onOrderComplete={(result) => {
-          // Optional: Handle order completion (refresh data, show notification, etc.)
           console.log("Order completed:", result);
         }}
       />
+
+      {/* Group order real-time progress modal */}
+      {groupProgressModal && (
+        <GroupOrderProgressModal
+          isOpen={!!groupProgressModal}
+          groupId={groupProgressModal.groupId}
+          groupName={groupProgressModal.groupName}
+          memberCount={groupProgressModal.memberCount}
+          onClose={() => setGroupProgressModal(null)}
+          onNewOrder={() => {
+            setGroupProgressModal(null);
+            resetOrderFlow();
+          }}
+        />
+      )}
     </VStack>
   );
 }

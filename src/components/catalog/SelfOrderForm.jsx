@@ -314,9 +314,14 @@ function SelfOrderResult({ t, result, onClose, onNewOrder }) {
                 align="center"
                 justify="space-between"
               >
-                <Text fontSize="sm" color={uiColors.textPrimary} fontFamily="mono">
-                  {firstOrder.short_url}
-                </Text>
+                <HStack spacing={0}>
+                  <Text fontSize="sm" color={uiColors.textSecondary} fontFamily="mono">
+                    onesim.uz/e/
+                  </Text>
+                  <Text fontSize="sm" fontWeight="700" color={uiColors.textPrimary} fontFamily="mono">
+                    {(firstOrder.short_url || "").replace("onesim.uz/e/", "")}
+                  </Text>
+                </HStack>
                 <AppButton
                   variant="ghost"
                   size="sm"

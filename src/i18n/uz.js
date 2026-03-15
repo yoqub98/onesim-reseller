@@ -661,6 +661,27 @@ const uz = {
       copySuccess: "Nusxalandi",
       copyError: "Nusxalashda xatolik"
     }
+  },
+  groupOrder: {
+    progressTitle: "Buyurtma jarayoni",
+    provisioningPhase: "eSIM buyurtma qilinmoqda...",
+    deliveryPhase: "SMS yuborilmoqda...",
+    doneTitle: "Buyurtma yakunlandi!",
+    initiating: "Buyurtma boshlanmoqda...",
+    memberProvisioning: "Tayyorlanmoqda",
+    memberAllocated: "Tayyor",
+    memberFailed: "Xatolik",
+    memberSending: "Yuborilmoqda",
+    memberSent: "Yuborildi",
+    memberManual: "Qo'lda",
+    close: "Yopish",
+    newOrder: "Yangi buyurtma",
+    summary: {
+      esims: "ta eSIM",
+      smsSent: "ta SMS yuborildi",
+      manual: "ta qo'lda",
+      failed: "ta xatolik"
+    }
   }
 };
 

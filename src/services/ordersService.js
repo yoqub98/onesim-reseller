@@ -166,6 +166,11 @@ export const ordersService = {
       return ordersService.listSelfOrders({ query: params.query });
     }
 
+    // For "group" tab, fetch real group orders from Supabase
+    if (tab === "group") {
+      return ordersService.listGroupOrders({ query: params.query });
+    }
+
     // For other tabs, use mock data (until implemented)
     const expectedType = portalTypeByTab[tab] || "client";
     const statusFilter = params.status || null;
@@ -678,6 +683,194 @@ export const ordersService = {
       "FAILED": ORDER_STATUS_FAILED
     };
     return statusMap[orderStatus] || ORDER_STATUS_PENDING;
+  },
+
+  // ============================================================
+  // GROUP ORDER — REAL SUPABASE METHODS
+  // ============================================================
+
+  /**
+   * Creates a group order (Mode 3: Guruh uchun).
+   * Calls the process-group-order Edge Function.
+   * @param {{ group_id: string, package_code: string, delivery_method: 'sms'|'manual' }} payload
+   * @returns {Promise<{ success: boolean, group_order_id?: string, status?: string, provisioned?: number, failed?: number, error?: string }>}
+   */
+  async createGroupOrder(payload) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return { success: false, error: "Not authenticated" };
+
+    const response = await supabase.functions.invoke("process-group-order", {
+      body: {
+        group_id: payload.group_id,
+        package_code: payload.package_code,
+        delivery_method: payload.delivery_method || "sms",
+      }
+    });
+
+    if (response.error) {
+      console.error("Group order edge function error:", response.error);
+      return { success: false, error: response.error.message || "Group order failed" };
+    }
+
+    return response.data;
+  },
+
+  /**
+   * Lists group orders from Supabase (replaces mock).
+   * @param {{ query?: string }} [params]
+   * @returns {Promise<Array>}
+   */
+  async listGroupOrders(params = {}) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return [];
+
+    const { data: partner } = await supabase
+      .from("partners")
+      .select("id")
+      .eq("user_id", session.user.id)
+      .single();
+
+    if (!partner) return [];
+
+    let query = supabase
+      .from("group_orders")
+      .select(`
+        id,
+        customer_group_id,
+        package_code,
+        status,
+        delivery_method,
+        member_count,
+        ordered_at,
+        completed_at,
+        created_at,
+        metadata,
+        customer_groups (
+          id,
+          name,
+          destination_country_code
+        )
+      `)
+      .eq("partner_id", partner.id)
+      .order("created_at", { ascending: false });
+
+    const { data: groupOrders, error } = await query;
+
+    if (error) {
+      console.error("Error fetching group orders:", error);
+      return [];
+    }
+
+    const normalized = normalize;
+    const queryStr = normalized(params.query);
+
+    return (groupOrders || [])
+      .map((row) => {
+        const group = Array.isArray(row.customer_groups)
+          ? row.customer_groups[0]
+          : row.customer_groups;
+        return {
+          id: row.id,
+          groupId: row.customer_group_id,
+          groupName: group?.name || "—",
+          destination: group?.destination_country_code || "",
+          packageCode: row.package_code,
+          status: row.status,
+          deliveryMethod: row.delivery_method,
+          memberCount: row.member_count,
+          orderedAt: row.ordered_at,
+          completedAt: row.completed_at,
+          createdAt: row.created_at,
+          metadata: row.metadata || {},
+        };
+      })
+      .filter((entry) => {
+        if (!queryStr) return true;
+        const searchable = [entry.groupName, entry.packageCode, entry.destination].map((v) => String(v || "").toLowerCase());
+        return searchable.some((v) => v.includes(queryStr));
+      });
+  },
+
+  /**
+   * Gets a single group order details from Supabase (replaces mock).
+   * @param {string} groupOrderId
+   * @returns {Promise<Object|null>}
+   */
+  async getGroupOrderDetails(groupOrderId) {
+    const { data: groupOrder, error } = await supabase
+      .from("group_orders")
+      .select(`
+        id,
+        customer_group_id,
+        package_code,
+        status,
+        delivery_method,
+        member_count,
+        ordered_at,
+        completed_at,
+        metadata,
+        customer_groups (
+          id,
+          name,
+          destination_country_code
+        )
+      `)
+      .eq("id", groupOrderId)
+      .single();
+
+    if (error || !groupOrder) {
+      console.error("Error fetching group order details:", error);
+      return null;
+    }
+
+    const { data: orders } = await supabase
+      .from("orders")
+      .select(`
+        id,
+        customer_first_name,
+        customer_last_name,
+        customer_phone,
+        customer_email,
+        end_customer_id,
+        order_status,
+        delivery_status,
+        iccid,
+        short_url,
+        activation_code,
+        created_at
+      `)
+      .eq("group_order_id", groupOrderId)
+      .order("created_at", { ascending: true });
+
+    const group = Array.isArray(groupOrder.customer_groups)
+      ? groupOrder.customer_groups[0]
+      : groupOrder.customer_groups;
+
+    return {
+      id: groupOrder.id,
+      groupId: groupOrder.customer_group_id,
+      groupName: group?.name || "—",
+      destination: group?.destination_country_code || "",
+      packageCode: groupOrder.package_code,
+      status: groupOrder.status,
+      deliveryMethod: groupOrder.delivery_method,
+      memberCount: groupOrder.member_count,
+      orderedAt: groupOrder.ordered_at,
+      completedAt: groupOrder.completed_at,
+      metadata: groupOrder.metadata || {},
+      customers: (orders || []).map((o) => ({
+        id: o.id,
+        customerId: o.end_customer_id,
+        name: [o.customer_first_name, o.customer_last_name].filter(Boolean).join(" ") || "—",
+        phone: o.customer_phone,
+        email: o.customer_email,
+        orderStatus: o.order_status,
+        deliveryStatus: o.delivery_status,
+        iccid: o.iccid,
+        shortUrl: o.short_url,
+        activationCode: o.activation_code,
+      })),
+    };
   },
 
   /**

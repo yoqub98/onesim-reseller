@@ -394,6 +394,27 @@ const ru = {
       accountEmail: "Email аккаунта",
     },
     logout: "Выйти",
+  },
+  groupOrder: {
+    progressTitle: "Процесс заказа",
+    provisioningPhase: "Заказ eSIM...",
+    deliveryPhase: "Отправка SMS...",
+    doneTitle: "Заказ завершён!",
+    initiating: "Начало заказа...",
+    memberProvisioning: "Оформляется",
+    memberAllocated: "Готово",
+    memberFailed: "Ошибка",
+    memberSending: "Отправляется",
+    memberSent: "Отправлено",
+    memberManual: "Вручную",
+    close: "Закрыть",
+    newOrder: "Новый заказ",
+    summary: {
+      esims: "eSIM",
+      smsSent: "SMS отправлено",
+      manual: "вручную",
+      failed: "ошибок"
+    }
   }
 };
 

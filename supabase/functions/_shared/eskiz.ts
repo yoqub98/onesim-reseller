@@ -19,6 +19,19 @@ interface EskizSendResponse {
   status: string;
 }
 
+interface EskizBatchMessage {
+  user_sms_id: string; // your idempotency key per message
+  to: string;          // phone as integer string, e.g. "998901234567"
+  text: string;
+}
+
+interface EskizBatchResponse {
+  id: number;          // dispatch_id assigned by Eskiz
+  message: string;
+  status: string;
+  messages?: Array<{ id: number; user_sms_id: string; status: string }>;
+}
+
 interface EskizBalanceResponse {
   data: {
     balance: number;
@@ -115,6 +128,52 @@ export class EskizClient {
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(`Eskiz send failed: ${response.status} - ${errorText}`);
+    }
+
+    return await response.json();
+  }
+
+  /**
+   * Send batch SMS (production use — requires paid Eskiz tier)
+   *
+   * FREE TIER NOTE: Batch endpoint requires a paid Eskiz plan.
+   * Use sendSms() with sequential calls for free tier.
+   *
+   * @param messages - Array of { user_sms_id, to, text } per recipient
+   * @param dispatchId - Your numeric batch ID for tracking
+   * @param callbackUrl - Optional DLR callback URL
+   */
+  async sendSmsBatch(
+    messages: EskizBatchMessage[],
+    dispatchId: number,
+    callbackUrl?: string
+  ): Promise<EskizBatchResponse> {
+    if (!this.token) {
+      await this.login();
+    }
+
+    const body: Record<string, unknown> = {
+      messages,
+      from: '4546',
+      dispatch_id: dispatchId,
+    };
+
+    if (callbackUrl) {
+      body.callback_url = callbackUrl;
+    }
+
+    const response = await fetch(`${ESKIZ_BASE_URL}/api/message/sms/send-batch`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Eskiz batch send failed: ${response.status} - ${errorText}`);
     }
 
     return await response.json();
