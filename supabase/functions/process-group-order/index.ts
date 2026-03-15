@@ -186,7 +186,7 @@ serve(async (req) => {
 
     const discountRate = partner.custom_discount_rate ?? partner.discount_rate ?? 10;
     const apiPrice = packageData.api_price;
-    const retailPriceUsd = packageData.retail_price_usd;
+    const retailPriceUsd = parseFloat(packageData.final_price_usd ?? packageData.retail_price ?? 0);
     const partnerPriceUsd = retailPriceUsd * (1 - discountRate / 100);
 
     // 0.7 Balance check
@@ -248,7 +248,7 @@ serve(async (req) => {
           customer_last_name: member.lastName,
           customer_phone: delivery_method === 'sms' ? member.phone : null,
           customer_email: member.email,
-          retail_price_usd: retailPriceUsd,
+          retail_price_override_usd: retailPriceUsd,
           partner_paid_usd: partnerPriceUsd,
           discount_rate: discountRate,
           discount_amount_usd: retailPriceUsd - partnerPriceUsd,

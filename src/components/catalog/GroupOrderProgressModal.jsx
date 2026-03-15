@@ -324,6 +324,20 @@ export default function GroupOrderProgressModal({
     subscriptionsRef.current = [];
   }, []);
 
+  // Timeout: if still in "initiating" after 20s, surface an error so the user can close
+  useEffect(() => {
+    if (!isOpen || state.phase !== "initiating") return;
+
+    const timerId = setTimeout(() => {
+      dispatch({
+        type: "SET_ERROR",
+        error: "Buyurtma boshlanmadi. Internet aloqasini tekshiring va qaytadan urinib ko'ring.",
+      });
+    }, 20000);
+
+    return () => clearTimeout(timerId);
+  }, [isOpen, state.phase]);
+
   useEffect(() => {
     if (!isOpen || !groupId) return;
 
@@ -442,7 +456,7 @@ export default function GroupOrderProgressModal({
   if (!isOpen) return null;
 
   return (
-    <Box position="fixed" inset={0} zIndex={50} bg="rgba(15,23,43,0.5)" onClick={state.phase === "complete" ? onClose : undefined}>
+    <Box position="fixed" inset={0} zIndex={50} bg="rgba(15,23,43,0.5)" onClick={(state.phase === "complete" || state.phase === "initiating") ? onClose : undefined}>
       <Box
         position="absolute"
         top="50%"
@@ -468,7 +482,7 @@ export default function GroupOrderProgressModal({
               {groupName}
             </Text>
           </VStack>
-          {state.phase === "complete" && (
+          {(state.phase === "complete" || state.phase === "initiating") && (
             <Box
               as="button"
               onClick={onClose}
