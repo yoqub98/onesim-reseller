@@ -90,15 +90,17 @@ function OrderModal({
         maxH={{ base: "calc(100vh - 8px)", md: "calc(100vh - 32px)" }}
         borderRadius="14px"
         overflow="hidden"
+        display="flex"
+        flexDirection="column"
         boxShadow="0px 25px 50px -12px rgba(0,0,0,0.25)"
         onClick={(event) => event.stopPropagation()}
       >
-        <Flex px={5} h="64px" align="center" justify="space-between" borderBottomWidth="1px" borderColor={uiColors.border}>
+        <Flex px={5} h="64px" flexShrink={0} align="center" justify="space-between" borderBottomWidth="1px" borderColor={uiColors.border}>
           <Text fontWeight="800" fontSize={{ base: "lg", md: "20px" }} color={uiColors.textPrimary}>{t.modal.title}</Text>
           <IconButton aria-label="Yopish" icon={<XMarkIcon width={18} />} variant="ghost" onClick={onClose} />
         </Flex>
 
-        <Grid templateColumns="repeat(3,1fr)" h="58px" borderBottomWidth="1px" borderColor={uiColors.border}>
+        <Grid templateColumns="repeat(3,1fr)" h="58px" flexShrink={0} borderBottomWidth="1px" borderColor={uiColors.border}>
           <Box
             borderBottomWidth="2px"
             borderColor={activeOrderTab === "self" ? uiColors.accent : "transparent"}
@@ -134,7 +136,7 @@ function OrderModal({
           </Box>
         </Grid>
 
-        <Box bg="rgba(248,250,252,0.6)" px={5} py={7} maxH={{ base: "54vh", md: "500px" }} overflowY="auto">
+        <Box bg="rgba(248,250,252,0.6)" px={5} py={7} flex={1} minH={0} overflowY="auto">
           <SurfaceCard p={4} boxShadow={uiShadows.soft} mb={8}>
             <Flex justify="space-between" align="center">
               <HStack spacing={3}>
@@ -350,7 +352,7 @@ function OrderModal({
         </Box>
 
         {activeOrderTab !== "self" && (
-          <Box borderTopWidth="1px" borderColor={uiColors.border} bg="white" px={5} py={5}>
+          <Box borderTopWidth="1px" borderColor={uiColors.border} bg="white" px={5} py={5} flexShrink={0}>
             <VStack align="stretch" spacing={2} mb={3}>
               <HStack justify="space-between">
                 <Text fontSize="sm" color="#45556c">{t.modal.summary.packagePrice} ({customerCount} ta)</Text>
