@@ -318,61 +318,6 @@ export const ordersService = {
   // ============================================================
 
   /**
-   * Fetches detailed group order with all customer eSIM data.
-   * @param {string} groupOrderId - The group order ID (e.g., "GO-2025-0142")
-   * @returns {Promise<import('./types').GroupOrderDetails|null>}
-   * @endpoint GET /api/v1/group-orders/{groupOrderId}
-   * @todo Backend - Join: group_orders + customer_groups + orders + partner_customers
-   */
-  getGroupOrderDetails(groupOrderId) {
-    // TODO: Backend - Replace with Supabase query
-    const order = groupOrdersMock.find((item) => item.id === groupOrderId) || null;
-    return withDelay(order, 400);
-  },
-
-  /**
-   * Lists all group orders for current partner.
-   * @param {{ query?: string }} [params]
-   * @returns {Promise<import('./types').GroupOrderSummary[]>}
-   * @endpoint GET /api/v1/group-orders
-   * @todo Backend - Query group_orders table with partner_id filter
-   */
-  listGroupOrders(params = {}) {
-    const query = normalize(params.query);
-
-    // TODO: Backend - Replace with Supabase query
-    const orders = groupOrdersMock
-      .filter((order) => {
-        if (!query) return true;
-        const searchable = [
-          order.id,
-          order.groupName,
-          order.groupCode,
-          order.destination
-        ].map(normalize);
-        return searchable.some((val) => val.includes(query));
-      })
-      .map((order) => ({
-        id: order.id,
-        groupId: order.groupId,
-        groupName: order.groupName,
-        groupCode: order.groupCode,
-        status: order.status,
-        destination: order.destination,
-        destinationCountryCode: order.destinationCountryCode,
-        packageName: order.package?.name,
-        totalCustomers: order.totalCustomers,
-        totalPriceUzs: order.totalPriceUzs,
-        partnerPaidUzs: order.partnerPaidUzs,
-        createdAt: order.createdAt,
-        travelStartDate: order.travelStartDate,
-        travelEndDate: order.travelEndDate
-      }));
-
-    return withDelay(orders, 350);
-  },
-
-  /**
    * Fetches single customer eSIM details within a group order.
    * @param {string} groupOrderId
    * @param {string} customerId
